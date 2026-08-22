@@ -4,19 +4,6 @@ All notable changes to **Django-GC** are documented in this file.
 
 ## [Unreleased]
 
-### Changed
-
-- Renamed the project to Django-GC. The Python package is `django_gc` and
-  the PyPI name is `django-gc`.
-- Renamed Django settings `GLOBAL_SETTINGS_*` to `GLOBAL_CONFIG_*`
-  (`CATEGORIES`, `DEFINITIONS`, `ENCRYPTION_KEY`, `CACHE_ALIAS`).
-- Renamed public `GlobalSetting*` types to `GlobalConfig*`
-  (`GlobalConfig`, `GlobalConfigCategory`, exceptions, services, and the
-  Celery task). `SettingDefinition` and `SettingType` are unchanged.
-- Set explicit table names: `global_config` and `global_config_category`.
-- `SettingType` is now `IntEnum` with `ChoicesEnumMixin` instead of Django
-  `IntegerChoices`. Use `SettingType.choices()` and `member.label()`.
-
 ## [1.0.1] — 2026-08-22
 
 ### Added

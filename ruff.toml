@@ -1,0 +1,61 @@
+line-length = 120
+target-version = "py312"
+force-exclude = true
+exclude = [
+    "**/migrations",
+    "**/migrations/**",
+    "variables",
+    "static",
+    "templates",
+    ".venv",
+]
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "TID", # flake8-tidy-imports
+    "UP",  # pyupgrade
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific rules
+    "PL",  # pylint port
+]
+ignore = [
+    "D100",    # missing-module-docstring (pylint C0114)
+    "D101",    # missing-class-docstring (pylint C0115)
+    "D102",    # missing-method-docstring (pylint C0116)
+    "D103",    # missing-function-docstring (pylint C0116)
+    "PLR0911", # too-many-return-statements (typed parse/form match)
+    "PLR0912", # too-many-branches (typed parse/form match)
+    "PLR0913", # too-many-arguments (pylint R0913)
+    "PLR0915", # too-many-statements (typed parse/form match)
+    "PLC0415", # import-outside-toplevel (pylint C0415)
+    "ARG001",  # unused-argument (pylint W0613)
+    "ARG002",  # unused-method-argument (pylint W0613)
+    "BLE001",  # broad-exception-caught (pylint W0718)
+    "PLR0917", # too-many-positional-arguments (pylint R0917)
+    "RUF001",  # ambiguous unicode in strings — Russian copy
+    "RUF002",  # ambiguous unicode in docstrings — Russian copy
+    "RUF012",  # mutable-class-default (Django Meta/Admin class attrs)
+]
+
+[lint.per-file-ignores]
+"apps.py" = ["F401"]
+"tests/*" = [
+    "PLR2004", # magic value in comparison — expected in assertions
+    "PLW0108", # lambda may be unnecessary — concise test stubs
+]
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[lint.isort]
+split-on-trailing-comma = false
+
+[format]
+quote-style = "single"
+skip-magic-trailing-comma = true

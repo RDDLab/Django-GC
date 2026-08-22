@@ -1,0 +1,183 @@
+/* Brand: Django-GC purple (#7c3aed). Same layout language as Django-Chassis. */
+
+:root {
+  --ifm-color-primary: #7c3aed;
+  --ifm-color-primary-dark: #6d28d9;
+  --ifm-color-primary-darker: #5b21b6;
+  --ifm-color-primary-darkest: #4c1d95;
+  --ifm-color-primary-light: #8b5cf6;
+  --ifm-color-primary-lighter: #a78bfa;
+  --ifm-color-primary-lightest: #c4b5fd;
+  --ifm-code-font-size: 95%;
+  --ifm-code-background: color-mix(in srgb, var(--ifm-color-emphasis-200) 55%, transparent);
+  --ifm-code-padding-horizontal: 0.28rem;
+  --ifm-code-padding-vertical: 0.08rem;
+  --ifm-code-border-radius: 0.28rem;
+  --ifm-font-size-base: 16px;
+  --ifm-line-height-base: 1.65;
+  --ifm-heading-font-weight: 700;
+  --ifm-global-radius: 0.5rem;
+  --ifm-navbar-height: 3.75rem;
+  --docusaurus-highlighted-code-line-bg: rgba(124, 58, 237, 0.08);
+  --chassis-card-border: rgba(124, 58, 237, 0.14);
+  --chassis-hero-glow-core: rgba(124, 58, 237, 0.2);
+  --chassis-hero-glow-mid: rgba(124, 58, 237, 0.08);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #a78bfa;
+  --ifm-color-primary-dark: #8b5cf6;
+  --ifm-color-primary-darker: #7c3aed;
+  --ifm-color-primary-darkest: #6d28d9;
+  --ifm-color-primary-light: #c4b5fd;
+  --ifm-color-primary-lighter: #ddd6fe;
+  --ifm-color-primary-lightest: #f5f3ff;
+  --ifm-background-color: #121417;
+  --ifm-background-surface-color: #1b1e24;
+  --ifm-navbar-background-color: #16181d;
+  --ifm-footer-background-color: #101215;
+  --ifm-code-background: rgba(255, 255, 255, 0.08);
+  --docusaurus-highlighted-code-line-bg: rgba(167, 139, 250, 0.12);
+  --chassis-card-border: rgba(167, 139, 250, 0.16);
+  --chassis-hero-glow-core: rgba(167, 139, 250, 0.48);
+  --chassis-hero-glow-mid: rgba(139, 92, 246, 0.2);
+}
+
+.navbar__logo {
+  height: 32px;
+}
+
+.navbar__logo img {
+  height: 32px;
+  width: 32px;
+}
+
+.menu__link {
+  font-size: 0.9rem;
+  border-radius: 0.4rem;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  background: color-mix(in srgb, var(--ifm-color-primary) 14%, transparent);
+  font-weight: 600;
+}
+
+.theme-doc-sidebar-container {
+  --doc-sidebar-width: 272px;
+}
+
+div[class^='codeBlockContainer'] {
+  box-shadow: none;
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+[data-theme='dark'] div[class^='codeBlockContainer'] {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: #16181d;
+}
+
+:not(pre) > code {
+  border: none;
+  box-shadow: none;
+}
+
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.language-bash .token.function,
+.language-bash .token.builtin,
+.language-bash .token.important,
+.language-sh .token.function,
+.language-sh .token.builtin,
+.language-shell .token.function,
+.language-shell .token.builtin,
+.language-console .token.function,
+.language-console .token.builtin {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.footer {
+  border-top: 1px solid var(--ifm-color-emphasis-200);
+}
+
+[data-theme='dark'] .footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.navbar {
+  box-shadow: none;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+}
+
+[data-theme='dark'] .navbar {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.markdown table {
+  display: table;
+  width: 100%;
+}
+
+.theme-doc-markdown {
+  overflow-x: auto;
+}
+
+.markdown th,
+.markdown td {
+  vertical-align: middle;
+}
+
+.markdown th:first-child,
+.markdown td:first-child,
+.markdown table code,
+.markdown :is(h1, h2, h3, h4, h5, h6) code {
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.docusaurus-mermaid-container {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 0.35rem 0.15rem 0;
+  padding: 0.12rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--ifm-color-primary) 45%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ifm-color-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+.version-badge--changed {
+  border-color: color-mix(in srgb, #d97706 55%, transparent);
+  color: #d97706;
+}
+
+.version-badge--deprecated {
+  border-color: color-mix(in srgb, #dc2626 55%, transparent);
+  color: #dc2626;
+}
+
+[data-theme='dark'] .version-badge--changed {
+  color: #fbbf24;
+  border-color: color-mix(in srgb, #fbbf24 55%, transparent);
+}
+
+[data-theme='dark'] .version-badge--deprecated {
+  color: #f87171;
+  border-color: color-mix(in srgb, #f87171 55%, transparent);
+}

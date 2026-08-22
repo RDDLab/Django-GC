@@ -1,0 +1,14 @@
+{
+  "sidebar.docs.category.Start": {
+    "message": "Старт",
+    "description": "The label for category Start in sidebar docs"
+  },
+  "sidebar.docs.category.Guide": {
+    "message": "Руководство",
+    "description": "The label for category Guide in sidebar docs"
+  },
+  "sidebar.docs.category.Reference": {
+    "message": "Справочник",
+    "description": "The label for category Reference in sidebar docs"
+  }
+}

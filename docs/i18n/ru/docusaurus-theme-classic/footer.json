@@ -1,0 +1,58 @@
+{
+  "link.title.Guide": {
+    "message": "Руководство",
+    "description": "The title of the footer links column with title=Guide in the footer"
+  },
+  "link.title.Reference": {
+    "message": "Справочник",
+    "description": "The title of the footer links column with title=Reference in the footer"
+  },
+  "link.title.Project": {
+    "message": "Проект",
+    "description": "The title of the footer links column with title=Project in the footer"
+  },
+  "link.item.label.Getting Started": {
+    "message": "Начало работы",
+    "description": "The label of footer link with label=Getting Started linking to /docs/getting-started"
+  },
+  "link.item.label.How it works": {
+    "message": "Как это работает",
+    "description": "The label of footer link with label=How it works linking to /docs/how-it-works"
+  },
+  "link.item.label.Definitions": {
+    "message": "Definitions",
+    "description": "The label of footer link with label=Definitions linking to /docs/definitions"
+  },
+  "link.item.label.Cache": {
+    "message": "Кэш",
+    "description": "The label of footer link with label=Cache linking to /docs/cache"
+  },
+  "link.item.label.API Reference": {
+    "message": "Справочник API",
+    "description": "The label of footer link with label=API Reference linking to /docs/api-reference"
+  },
+  "link.item.label.Settings and checks": {
+    "message": "Настройки и проверки",
+    "description": "The label of footer link with label=Settings and checks linking to /docs/settings-and-checks"
+  },
+  "link.item.label.Types": {
+    "message": "Типы",
+    "description": "The label of footer link with label=Types linking to /docs/types"
+  },
+  "link.item.label.Contributing": {
+    "message": "Участие в разработке",
+    "description": "The label of footer link with label=Contributing linking to /docs/contrib"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/RDDLab/Django-GC"
+  },
+  "link.item.label.PyPI": {
+    "message": "PyPI",
+    "description": "The label of footer link with label=PyPI linking to https://pypi.org/project/django-gc/"
+  },
+  "link.item.label.Changelog": {
+    "message": "Changelog",
+    "description": "The label of footer link with label=Changelog linking to https://github.com/RDDLab/Django-GC/blob/main/CHANGELOG.md"
+  }
+}

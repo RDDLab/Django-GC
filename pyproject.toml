@@ -1,0 +1,87 @@
+[build-system]
+requires = [
+    "setuptools>=80.10.1",
+    "wheel==0.47.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-gc"
+version = "1.0.1"
+description = "Typed Django runtime configuration stored in the database and served from cache"
+readme = "README.md"
+authors = [
+    { name = "Raman Marozau", email = "r.morozov@rdd-lab.com" }
+]
+requires-python = ">=3.12"
+license = { text = "MIT" }
+keywords = ["django", "config", "settings", "cache", "admin"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Framework :: Django",
+    "Framework :: Django :: 6.0",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed"
+]
+
+dependencies = [
+    "django>=6.0",
+    "cryptography>=44.0.0",
+]
+
+[project.optional-dependencies]
+celery = [
+    "celery>=5.3",
+]
+
+[dependency-groups]
+dev = [
+    "django-stubs>=6.0",
+    "pytest>=9.1.1",
+    "pytest-django>=4.9.0",
+    "pytest-mock>=3.14.0",
+    "pytest-cov>=6.0.0",
+    "pyrefly>=0.60.0",
+    "ruff==0.15.20",
+    "pre-commit>=4.6.0",
+    "celery>=5.3",
+]
+
+[tool.pyrefly]
+project-includes = ["django_gc"]
+project-excludes = ["**/migrations"]
+python-version = "3.12"
+preset = "strict"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"
+
+[project.urls]
+Homepage = "https://django-gc.rdd-lab.com/"
+Documentation = "https://django-gc.rdd-lab.com/"
+Issues = "https://github.com/RDDLab/Django-GC/issues"
+Repository = "https://github.com/RDDLab/Django-GC"
+Changelog = "https://github.com/RDDLab/Django-GC/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["django_gc*"]
+
+[tool.setuptools.package-data]
+"django_gc" = [
+    "py.typed",
+]

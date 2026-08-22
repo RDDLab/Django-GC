@@ -4,6 +4,7 @@ sidebar_position: 3
 ---
 
 <Since v="1.0.1" />
+<Changed v="1.0.2" />
 
 Runtime code reads values only through `get_value()`. ORM reads of a single key, custom cache-aside keys, and domain fallbacks are out of scope for this package.
 
@@ -48,4 +49,4 @@ There is no single-row database fallback. Keys have no TTL. Freshness comes from
 
 Initialization suppresses per-row refresh and schedules one commit-time refresh.
 
-Rows live in explicit tables `global_config` and `global_config_category`.
+Rows live in explicit tables `global_configs` and `global_config_categories`.

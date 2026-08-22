@@ -4,6 +4,7 @@ sidebar_position: 3
 ---
 
 <Since v="1.0.1" />
+<Changed v="1.0.2" />
 
 Runtime-код читает значения только через `get_value()`. ORM-чтение одного ключа, свои cache-aside ключи и доменные fallback в пакет не входят.
 
@@ -48,4 +49,4 @@ Fallback к чтению одной строки из БД нет. У ключе
 
 Инициализация подавляет per-row refresh и планирует один refresh после commit.
 
-Строки хранятся в явных таблицах `global_config` и `global_config_category`.
+Строки хранятся в явных таблицах `global_configs` и `global_config_categories`.

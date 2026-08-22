@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Категория глобальных настроек',
                 'verbose_name_plural': 'Категории глобальных настроек',
-                'db_table': 'global_config_category',
+                'db_table': 'global_config_categories',
                 'ordering': ['id'],
                 'default_permissions': ['change', 'view'],
             },
@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Глобальная настройка',
                 'verbose_name_plural': 'Глобальные настройки',
-                'db_table': 'global_config',
+                'db_table': 'global_configs',
                 'default_permissions': ['change', 'view'],
             },
         ),

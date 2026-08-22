@@ -4,6 +4,13 @@ All notable changes to **Django-GC** are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-08-22
+
+### Changed
+
+- Physical table names are now `global_configs` and `global_config_categories`.
+  The initial migration and docs match the model `db_table` values.
+
 ## [1.0.1] — 2026-08-22
 
 ### Added
@@ -15,4 +22,5 @@ All notable changes to **Django-GC** are documented in this file.
 - Single `GLOBAL_CONFIG_ENCRYPTION_KEY` setting for `SECURE` values. Categories,
   keys, and this encryption key are declared in the Django project's settings.
 
+[1.0.2]: https://github.com/RDDLab/Django-GC/releases/tag/1.0.2
 [1.0.1]: https://github.com/RDDLab/Django-GC/releases/tag/1.0.1

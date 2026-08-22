@@ -1,5 +1,3 @@
-![Icon](https://github.com/RDDLab/Django-GC/raw/main/docs/static/img/icon.svg)
-
 ![Logo](https://github.com/RDDLab/Django-GC/raw/main/docs/static/img/logo.svg)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)

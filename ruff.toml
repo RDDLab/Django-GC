@@ -8,6 +8,7 @@ exclude = [
     "static",
     "templates",
     ".venv",
+    "*.md",
 ]
 
 [lint]
@@ -59,3 +60,4 @@ split-on-trailing-comma = false
 [format]
 quote-style = "single"
 skip-magic-trailing-comma = true
+exclude = ["*.md"]

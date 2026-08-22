@@ -31,10 +31,10 @@ jobs:
         run: uv sync --group dev
 
       - name: Run ruff (lint)
-        run: uv run ruff check .
+        run: uv run ruff check --config ruff.toml .
 
       - name: Run ruff (format check)
-        run: uv run ruff format --check .
+        run: uv run ruff format --check --config ruff.toml .
 
       - name: Run pyrefly (type check)
         run: uv run pyrefly check

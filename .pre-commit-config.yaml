@@ -26,12 +26,13 @@ repos:
         args: ["--markdown-linebreak-ext=md"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.20
+    rev: v0.16.3
     hooks:
       - id: ruff-check
-        args: ["--fix"]
+        args: ["--fix", "--config=ruff.toml"]
         exclude: (^|/)migrations/
       - id: ruff-format
+        args: ["--config=ruff.toml"]
         exclude: (^|/)migrations/
 
   - repo: local

@@ -24,9 +24,13 @@ uv sync --group dev
 
 ## Линтинг
 
+Ruff читает `ruff.toml`: длина строки 120, список ignore проекта и
+`force-exclude` для миграций и Markdown. Не запускайте Ruff без этого
+файла — дефолты конфликтуют с атрибутами Django admin и примерами в доках.
+
 ```bash
-uv run ruff check .
-uv run ruff format --check .
+uv run ruff check --config ruff.toml .
+uv run ruff format --check --config ruff.toml .
 uv run pyrefly check
 ```
 

@@ -25,9 +25,13 @@ uv sync --group dev
 
 ## Linting
 
+Ruff reads `ruff.toml`: line length 120, project ignore list, and
+`force-exclude` for migrations and Markdown. Do not run Ruff without that
+file — the defaults fight Django admin class attrs and docs examples.
+
 ```bash
-uv run ruff check .
-uv run ruff format --check .
+uv run ruff check --config ruff.toml .
+uv run ruff format --check --config ruff.toml .
 uv run pyrefly check
 ```
 

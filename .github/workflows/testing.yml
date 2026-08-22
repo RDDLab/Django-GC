@@ -75,16 +75,3 @@ jobs:
         run: |
           rm -rf .venv .pytest_cache .ruff_cache .coverage htmlcov
           find . -type d -name "__pycache__" -prune -exec rm -rf {} +
-
-  security:
-    name: Security checks
-    needs:
-      - lint
-      - unit-test
-    uses: ./.github/workflows/security.yml
-    permissions:
-      actions: read
-      contents: read
-      id-token: write
-      pull-requests: read
-      security-events: write

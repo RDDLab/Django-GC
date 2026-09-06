@@ -71,6 +71,40 @@ class GlobalConfigService(Singleton):
             raise GlobalConfigNotFoundError(key=str(key))
         return self._resolve_cache_value(key=str(key), cached_value=cached_value)
 
+    def refresh_value(self, key: str | StrEnum) -> None:
+        """
+        Перечитать и опубликовать только изменённый ключ под общей refresh-блокировкой.
+        """
+        lock = self._cache.get_lock(key=self.REFRESH_LOCK_CACHE_KEY, timeout=self.REFRESH_LOCK_TIMEOUT_SECONDS)
+        acquired = lock.acquire(blocking=True, blocking_timeout=self.REFRESH_LOCK_BLOCKING_TIMEOUT_SECONDS)
+        if not acquired:
+            raise GlobalConfigRefreshLockTimeoutError()
+
+        cache_key = self.build_cache_key(key=key)
+        try:
+            self._cache.delete(key=cache_key)
+            config = (
+                GlobalConfig.objects.only('key', 'value', 'value_type', 'nullable')
+                .filter(pk=str(key))
+                .first()
+            )
+            if config is None:
+                raise GlobalConfigNotFoundError(key=str(key))
+            self._cache.set_many_if_lock_owned(
+                values={
+                    cache_key: GlobalConfigCacheValueDTO(
+                        value=self._parse_value(config=config),
+                        value_type=SettingType(config.value_type),
+                    )
+                },
+                lock=lock,
+            )
+        finally:
+            try:
+                lock.release()
+            except GlobalConfigLockNotOwnedError:
+                logger.warning({'message': 'GlobalConfig refresh lock expired before release.', 'data': {}})
+
     def refresh_cache(self, requested_cache_key: str | None = None) -> int:
         """
         Сформировать полный снимок под распределённой блокировкой.

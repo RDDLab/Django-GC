@@ -73,6 +73,31 @@ class GlobalConfigServiceTestCase(TestCase):
         self.assertEqual(value, 42)
         self.assertEqual(backend.lock.acquire_count, 0)
 
+    def test_refresh_value_replaces_only_changed_cache_entry(self) -> None:
+        """
+        Перечитать и заменить один ключ, не пересобирая остальные значения.
+        """
+        GlobalConfig.objects.filter(pk=PAGINATION_KEY).update(value='42')
+        changed_key = self.service.build_cache_key(key=PAGINATION_KEY)
+        other_key = self.service.build_cache_key(key='maintenance-enabled')
+        service, backend = self.create_service(
+            backend=FakeCacheBackend(
+                {
+                    changed_key: GlobalConfigCacheValueDTO(value=25, value_type=SettingType.INTEGER),
+                    other_key: GlobalConfigCacheValueDTO(value=True, value_type=SettingType.BOOLEAN),
+                }
+            )
+        )
+
+        service.refresh_value(key=PAGINATION_KEY)
+
+        self.assertEqual(backend.values[changed_key].value, 42)
+        self.assertIs(backend.values[other_key].value, True)
+        self.assertEqual(backend.lock.acquire_count, 1)
+        self.assertEqual(backend.lock.release_count, 1)
+        self.assertEqual(len(backend.mset_calls), 1)
+        self.assertEqual(set(backend.mset_calls[0]), {changed_key})
+
     def test_cache_miss_refreshes_all_values_and_retries(self) -> None:
         """
         При cache miss опубликовать снимок и повторить чтение ключа.

@@ -4,7 +4,7 @@ sidebar_position: 10
 ---
 
 <Since v="1.0.1" />
-<Changed v="1.0.1" />
+<Changed v="1.0.3" />
 
 ```python
 from django_gc import (
@@ -23,7 +23,7 @@ from django_gc import (
 | Function | Returns | Notes |
 |---|---|---|
 | `get_value(key)` | typed value | `str` or `StrEnum`; may refresh the snapshot |
-| `set_value(key, value)` | `GlobalConfig` | existing keys only |
+| `set_value(key, value)` | `GlobalConfig` | existing keys only; refreshes that cache entry after commit |
 | `refresh_cache()` | `int` | published key count, or `0` if another owner already published |
 | `is_cache_ready()` | `bool` | marker + every declared DTO, no database |
 

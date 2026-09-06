@@ -4,7 +4,7 @@ sidebar_position: 10
 ---
 
 <Since v="1.0.1" />
-<Changed v="1.0.1" />
+<Changed v="1.0.3" />
 
 ```python
 from django_gc import (
@@ -23,7 +23,7 @@ from django_gc import (
 | Функция | Возвращает | Заметки |
 |---|---|---|
 | `get_value(key)` | типизированное значение | `str` или `StrEnum`; может обновить снимок |
-| `set_value(key, value)` | `GlobalConfig` | только существующие ключи |
+| `set_value(key, value)` | `GlobalConfig` | только существующие ключи; после commit обновляет этот cache entry |
 | `refresh_cache()` | `int` | число опубликованных ключей или `0`, если снимок уже опубликовал другой владелец |
 | `is_cache_ready()` | `bool` | маркер + каждый объявленный DTO, без базы |
 

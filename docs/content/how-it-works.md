@@ -4,7 +4,7 @@ sidebar_position: 3
 ---
 
 <Since v="1.0.1" />
-<Changed v="1.0.2" />
+<Changed v="1.0.3" />
 
 Runtime code reads values only through `get_value()`. ORM reads of a single key, custom cache-aside keys, and domain fallbacks are out of scope for this package.
 
@@ -38,15 +38,15 @@ flowchart TD
 8. Publish values and the readiness marker with `set_many` while the lock is still owned.
 9. Resolve the requested key. `SECURE` is decrypted only in memory.
 
-There is no single-row database fallback. Keys have no TTL. Freshness comes from a full refresh, not expiry.
+There is no single-row database fallback in `get_value()`. Keys have no TTL. A committed save refreshes that key directly; full refresh handles cache-miss recovery and reconciliation.
 
 ## Refresh triggers
 
 - synchronous cache miss
-- `post_save` on `GlobalConfig` via `transaction.on_commit()`
+- targeted refresh of the saved key after `post_save` via `transaction.on_commit()`
 - `post_migrate` after initialization
 - optional Celery task `django_gc.refresh_global_configs_cache`
 
-Initialization suppresses per-row refresh and schedules one commit-time refresh.
+Initialization suppresses per-row refresh and schedules one full commit-time refresh.
 
 Rows live in explicit tables `global_configs` and `global_config_categories`.

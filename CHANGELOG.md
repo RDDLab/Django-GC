@@ -4,6 +4,19 @@ All notable changes to **Django-GC** are documented in this file.
 
 ## [Unreleased]
 
+## [1.0.3] — 2026-09-06
+
+### Changed
+
+- Saving one `GlobalConfig` now refreshes only that typed cache entry under the
+  shared refresh lock. Full snapshot rebuilds remain dedicated to cache misses,
+  initialization, and the optional periodic task.
+
+### Fixed
+
+- An invalid or missing unrelated setting no longer prevents a successfully
+  saved value from reaching cache through the post-commit callback.
+
 ## [1.0.2] — 2026-08-22
 
 ### Changed
@@ -22,5 +35,6 @@ All notable changes to **Django-GC** are documented in this file.
 - Single `GLOBAL_CONFIG_ENCRYPTION_KEY` setting for `SECURE` values. Categories,
   keys, and this encryption key are declared in the Django project's settings.
 
+[1.0.3]: https://github.com/RDDLab/Django-GC/releases/tag/1.0.3
 [1.0.2]: https://github.com/RDDLab/Django-GC/releases/tag/1.0.2
 [1.0.1]: https://github.com/RDDLab/Django-GC/releases/tag/1.0.1

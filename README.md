@@ -32,7 +32,8 @@ Django-GC stores typed runtime settings in the database and serves them from Dja
 
 - **Code-declared keys** — categories and definitions live in Django settings and are synchronized after migrate.
 - **Typed values** — strings, numbers, dates, arrays, choices, JSON, UUID, and optional secure secrets.
-- **Full cache snapshot** — `get_value()` never falls back to a single-row ORM read.
+- **Targeted cache updates** — saving one setting refreshes only its typed cache entry.
+- **Full recovery snapshot** — `get_value()` never falls back to a single-row ORM read on cache miss.
 - **Stock Django Admin** — edit values with standard `ModelAdmin` and Django's built-in change history.
 - **Optional Celery** — periodic full snapshot refresh.
 - **Fully typed** — ships `py.typed`; compatible with pyrefly and standard type checkers.

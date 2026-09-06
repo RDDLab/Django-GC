@@ -1,15 +1,17 @@
+from functools import partial
+
 from django.core.cache import cache
 from django.test import TestCase
 
 from django_gc.models import GlobalConfig
 from django_gc.services import GlobalConfigInitializationService, GlobalConfigService
-from django_gc.signals.callbacks import refresh_global_configs_cache_safely
+from django_gc.signals.callbacks import refresh_global_config_value_safely, refresh_global_configs_cache_safely
 from django_gc.signals.refresh_global_configs_cache import refresh_global_configs_cache
 
 
 class GlobalConfigSignalsTestCase(TestCase):
     """
-    Проверить регистрацию полного refresh после изменения GlobalConfig.
+    Проверить регистрацию точечного refresh после изменения GlobalConfig.
     """
 
     def setUp(self) -> None:
@@ -21,7 +23,7 @@ class GlobalConfigSignalsTestCase(TestCase):
         self.service._cache = self._original_cache
         cache.clear()
 
-    def test_save_schedules_full_refresh_after_commit(self) -> None:
+    def test_save_schedules_changed_value_refresh_after_commit(self) -> None:
         """
         Запланировать callback только после успешной фиксации изменения.
         """
@@ -30,14 +32,24 @@ class GlobalConfigSignalsTestCase(TestCase):
         with self.captureOnCommitCallbacks() as callbacks:
             config.save(update_fields=['value', 'updated_at'])
 
-        self.assertIn(refresh_global_configs_cache_safely, callbacks)
+        self.assertEqual(len(callbacks), 1)
+        callback = callbacks[0]
+        self.assertIsInstance(callback, partial)
+        self.assertIs(callback.func, refresh_global_config_value_safely)
+        self.assertEqual(callback.keywords, {'changed_key': str(config.key)})
 
     def test_fixture_load_does_not_refresh_cache(self) -> None:
         """
         Не запускать побочные эффекты при загрузке raw fixture.
         """
+        config = GlobalConfig.objects.get(pk='platform-pagination-size')
         with self.captureOnCommitCallbacks() as callbacks:
-            refresh_global_configs_cache(sender=GlobalConfig, using='default', raw=True)
+            refresh_global_configs_cache(
+                sender=GlobalConfig,
+                instance=config,
+                using='default',
+                raw=True,
+            )
 
         self.assertEqual(callbacks, [])
 

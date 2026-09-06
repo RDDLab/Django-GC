@@ -4,7 +4,7 @@ sidebar_position: 3
 ---
 
 <Since v="1.0.1" />
-<Changed v="1.0.2" />
+<Changed v="1.0.3" />
 
 Runtime-код читает значения только через `get_value()`. ORM-чтение одного ключа, свои cache-aside ключи и доменные fallback в пакет не входят.
 
@@ -38,15 +38,15 @@ flowchart TD
 8. Опубликовать значения и маркер готовности через `set_many`, пока lock принадлежит процессу.
 9. Вернуть запрошенный ключ. `SECURE` расшифровывается только в памяти.
 
-Fallback к чтению одной строки из БД нет. У ключей нет TTL. Актуальность даёт полный refresh, а не истечение.
+В `get_value()` нет fallback к чтению одной строки из БД. У ключей нет TTL. После commit сохранённый ключ обновляется точечно; полный refresh отвечает за восстановление после cache miss и периодическую сверку.
 
 ## Когда обновляется снимок
 
 - синхронный cache miss
-- `post_save` у `GlobalConfig` через `transaction.on_commit()`
+- точечный refresh сохранённого ключа после `post_save` через `transaction.on_commit()`
 - `post_migrate` после инициализации
 - необязательная Celery-задача `django_gc.refresh_global_configs_cache`
 
-Инициализация подавляет per-row refresh и планирует один refresh после commit.
+Инициализация подавляет per-row refresh и планирует один полный refresh после commit.
 
 Строки хранятся в явных таблицах `global_configs` и `global_config_categories`.

@@ -14,10 +14,7 @@ def refresh_global_config_value_safely(changed_key: str | StrEnum) -> None:
         GlobalConfigService().refresh_value(key=changed_key)
     except Exception as e:
         logger.exception(
-            {
-                'message': 'Failed to refresh changed GlobalConfig value after commit.',
-                'data': {'error': str(e)},
-            }
+            {'message': 'Failed to refresh changed GlobalConfig value after commit.', 'data': {'error': str(e)}}
         )
 
 

@@ -83,18 +83,13 @@ class GlobalConfigService(Singleton):
         cache_key = self.build_cache_key(key=key)
         try:
             self._cache.delete(key=cache_key)
-            config = (
-                GlobalConfig.objects.only('key', 'value', 'value_type', 'nullable')
-                .filter(pk=str(key))
-                .first()
-            )
+            config = GlobalConfig.objects.only('key', 'value', 'value_type', 'nullable').filter(pk=str(key)).first()
             if config is None:
                 raise GlobalConfigNotFoundError(key=str(key))
             self._cache.set_many_if_lock_owned(
                 values={
                     cache_key: GlobalConfigCacheValueDTO(
-                        value=self._parse_value(config=config),
-                        value_type=SettingType(config.value_type),
+                        value=self._parse_value(config=config), value_type=SettingType(config.value_type)
                     )
                 },
                 lock=lock,

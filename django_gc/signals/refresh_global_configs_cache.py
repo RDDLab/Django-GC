@@ -12,18 +12,11 @@ from django_gc.signals.callbacks import refresh_global_config_value_safely
 
 @receiver(signal=post_save, sender=GlobalConfig, dispatch_uid='django_gc.refresh_cache')
 def refresh_global_configs_cache(
-    sender: type[GlobalConfig],
-    instance: GlobalConfig,
-    using: str,
-    raw: bool,
-    **kwargs: Any,
+    sender: type[GlobalConfig], instance: GlobalConfig, using: str, raw: bool, **kwargs: Any
 ) -> None:
     """
     Запланировать точечное обновление изменённого ключа после commit.
     """
     if raw or is_refresh_suppressed():
         return
-    transaction.on_commit(
-        partial(refresh_global_config_value_safely, changed_key=str(instance.key)),
-        using=using,
-    )
+    transaction.on_commit(partial(refresh_global_config_value_safely, changed_key=str(instance.key)), using=using)

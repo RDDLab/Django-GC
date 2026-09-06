@@ -44,12 +44,7 @@ class GlobalConfigSignalsTestCase(TestCase):
         """
         config = GlobalConfig.objects.get(pk='platform-pagination-size')
         with self.captureOnCommitCallbacks() as callbacks:
-            refresh_global_configs_cache(
-                sender=GlobalConfig,
-                instance=config,
-                using='default',
-                raw=True,
-            )
+            refresh_global_configs_cache(sender=GlobalConfig, instance=config, using='default', raw=True)
 
         self.assertEqual(callbacks, [])
 

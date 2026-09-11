@@ -12,12 +12,23 @@ class GlobalConfigInitializationTestCase(TestCase):
     Проверить синхронизацию definitions без перезаписи рабочих значений.
     """
 
-    def test_initialize_creates_declared_categories_and_keys(self) -> None:
+    def test_initialize_creates_numeric_categories_and_declared_keys(self) -> None:
         """
-        Создать все объявленные категории и ключи.
+        Создать числовые строки категорий и связанные ключи.
         """
         self.assertEqual(GlobalConfigCategory.objects.count(), len(TEST_CATEGORIES))
+        self.assertSetEqual(set(GlobalConfigCategory.objects.values_list('id', flat=True)), {1, 2})
         self.assertEqual(GlobalConfig.objects.count(), len(TEST_DEFINITIONS))
+
+    def test_category_table_does_not_duplicate_definition_metadata(self) -> None:
+        """
+        Хранить в таблице категории только числовой идентификатор.
+        """
+        field_names = {field.name for field in GlobalConfigCategory._meta.local_fields}
+        self.assertSetEqual(field_names, {'id'})
+        category = GlobalConfigCategory.objects.get(pk=1)
+        self.assertEqual(category.code, 'platform')
+        self.assertEqual(category.name, 'Platform')
 
     def test_initialize_preserves_live_value(self) -> None:
         """
@@ -31,19 +42,6 @@ class GlobalConfigInitializationTestCase(TestCase):
 
         config.refresh_from_db()
         self.assertEqual(config.value, '99')
-
-    def test_initialize_preserves_renamed_category(self) -> None:
-        """
-        Сохранить ручное название категории.
-        """
-        category = GlobalConfigCategory.objects.get(pk=1)
-        category.name = 'Renamed'
-        category.save(update_fields=['name', 'updated_at'])
-
-        GlobalConfigInitializationService().initialize()
-
-        category.refresh_from_db()
-        self.assertEqual(category.name, 'Renamed')
 
     def test_initialize_updates_metadata_only(self) -> None:
         """
@@ -125,13 +123,27 @@ class GlobalConfigInitializationTestCase(TestCase):
         config = GlobalConfig.objects.get(pk='theme-choice')
         self.assertEqual(config.variables, {'Dark': 'dark', 'Light': 'light', 'System': 'system'})
 
-    def test_new_category_is_created_from_definitions(self) -> None:
+    def test_initialize_rejects_unknown_numeric_category(self) -> None:
         """
-        Добавить новую категорию без удаления существующих.
+        Не создавать ключ с отсутствующей в definitions категорией.
+        """
+        definition = SettingDefinition(
+            key='reports-enabled',
+            description='Reports',
+            default_value=False,
+            value_type=TEST_DEFINITIONS[0].value_type,
+            category_id=9,
+        )
+        with override_settings(GLOBAL_CONFIG_DEFINITIONS=[definition]), self.assertRaisesRegex(KeyError, 'id=9'):
+            GlobalConfigInitializationService().initialize()
+
+    def test_new_numeric_category_is_created_from_definitions(self) -> None:
+        """
+        Добавить новую строку категории, не сохраняя code и name.
         """
         extra_categories = [*TEST_CATEGORIES, CategoryDefinition(id=9, code='reports', name='Reports')]
         with override_settings(GLOBAL_CONFIG_CATEGORIES=extra_categories):
             GlobalConfigInitializationService().initialize()
-
-        self.assertTrue(GlobalConfigCategory.objects.filter(pk=9, code='reports').exists())
-        self.assertEqual(GlobalConfigCategory.objects.count(), 3)
+            category = GlobalConfigCategory.objects.get(pk=9)
+            self.assertEqual(category.code, 'reports')
+            self.assertEqual(category.name, 'Reports')

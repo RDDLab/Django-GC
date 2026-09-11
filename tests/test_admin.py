@@ -37,7 +37,7 @@ class GlobalConfigAdminTestCase(TestCase):
 
     def test_add_and_delete_permissions_are_denied(self) -> None:
         """
-        Запретить add и delete на обеих моделях.
+        Запретить add и delete обеих моделей.
         """
         config_admin = site._registry[GlobalConfig]
         category_admin = site._registry[GlobalConfigCategory]
@@ -67,11 +67,43 @@ class GlobalConfigAdminTestCase(TestCase):
         form = GlobalConfigForm(instance=config)
         self.assertTrue(form.fields['value'].disabled)
 
-    def test_category_changelist_is_searchable(self) -> None:
+    def test_category_name_is_resolved_in_ui(self) -> None:
         """
-        Искать категории по коду и названию.
+        Показать название числовой категории из definitions.
+        """
+        url = reverse('admin:django_gc_globalconfig_changelist')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Platform')
+
+    def test_category_filter_uses_definition_names(self) -> None:
+        """
+        Отфильтровать ключи по числовой категории с человекочитаемым label.
+        """
+        url = reverse('admin:django_gc_globalconfig_changelist')
+        response = self.client.get(url, {'category__id__exact': '2'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Auth')
+        self.assertContains(response, 'secret-token')
+        self.assertNotContains(response, 'platform-pagination-size')
+
+    def test_category_search_uses_definition_code_and_name(self) -> None:
+        """
+        Найти ключи через code или name категории из definitions.
+        """
+        url = reverse('admin:django_gc_globalconfig_changelist')
+        response = self.client.get(url, {'q': 'auth'})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'secret-token')
+        self.assertNotContains(response, 'platform-pagination-size')
+
+    def test_category_changelist_is_matched_from_definitions(self) -> None:
+        """
+        Показать и искать code/name, которых нет в таблице категорий.
         """
         url = reverse('admin:django_gc_globalconfigcategory_changelist')
         response = self.client.get(url, {'q': 'platform'})
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Platform')
         self.assertContains(response, 'platform')
+        self.assertQuerySetEqual(response.context['cl'].queryset.values_list('id', flat=True), [1])

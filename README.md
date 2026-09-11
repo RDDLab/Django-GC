@@ -1,6 +1,7 @@
 ![Logo](https://github.com/RDDLab/Django-GC/raw/main/docs/static/img/logo.svg)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Version: 1.1.4](https://img.shields.io/badge/version-1.1.4-blue.svg?style=for-the-badge)](https://github.com/RDDLab/Django-GC/releases/tag/1.1.4)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge)](https://docs.astral.sh/ruff)
 [![pyrefly](https://img.shields.io/endpoint?url=https://pyrefly.org/badge.json&style=for-the-badge)](https://pyrefly.org)
 [![PyPI](https://img.shields.io/pypi/v/django-gc?style=for-the-badge)](https://pypi.org/project/django-gc/)

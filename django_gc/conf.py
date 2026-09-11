@@ -27,6 +27,24 @@ def get_category_definitions() -> Sequence[CategoryDefinition]:
     return tuple(getattr(settings, 'GLOBAL_CONFIG_CATEGORIES', ()))
 
 
+def get_category_definition(*, category_id: int) -> CategoryDefinition | None:
+    """
+    Найти объявленную проектом категорию по числовому идентификатору.
+    """
+    for definition in get_category_definitions():
+        if definition.id == category_id:
+            return definition
+    return None
+
+
+def get_category_name(*, category_id: int) -> str:
+    """
+    Сопоставить числовой идентификатор категории с названием из definitions.
+    """
+    definition = get_category_definition(category_id=category_id)
+    return definition.name if definition is not None else str(category_id)
+
+
 def get_setting_definitions() -> Sequence[SettingDefinition]:
     """
     Прочитать объявленные проектом ключи.

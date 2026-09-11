@@ -1,9 +1,11 @@
 from typing import TYPE_CHECKING, override
 
 from django.contrib import admin
+from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
+from django_gc.conf import get_category_definitions
 from django_gc.forms import GlobalConfigForm
 from django_gc.models import GlobalConfig
 
@@ -32,6 +34,25 @@ class GlobalConfigAdmin(_GlobalConfigAdmin):
         (_('Значение'), {'classes': ['wide'], 'fields': ['value']}),
         (_('Даты'), {'classes': ['wide'], 'fields': ['created_at', 'updated_at']}),
     ]
+
+    @override
+    def get_search_results(
+        self, request: HttpRequest, queryset: QuerySet[GlobalConfig], search_term: str
+    ) -> tuple[QuerySet[GlobalConfig], bool]:
+        """
+        Дополнить ORM-поиск совпадениями по code и name категорий.
+        """
+        base_queryset = queryset
+        queryset, use_distinct = super().get_search_results(request=request, queryset=queryset, search_term=search_term)
+        normalized_term = search_term.casefold()
+        category_ids = [
+            item.id
+            for item in get_category_definitions()
+            if normalized_term and (normalized_term in item.code.casefold() or normalized_term in item.name.casefold())
+        ]
+        if category_ids:
+            queryset |= base_queryset.filter(category_id__in=category_ids)
+        return queryset, use_distinct
 
     @override
     def has_add_permission(self, request: HttpRequest) -> bool:

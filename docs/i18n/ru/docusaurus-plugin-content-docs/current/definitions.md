@@ -4,10 +4,18 @@ sidebar_position: 4
 ---
 
 <Since v="1.0.1" />
+<Changed v="1.1.4" />
 
 Библиотека не поставляет продуктовые ключи. Django-приложение объявляет
 категории и ключи в `settings` проекта вместе с
 `GLOBAL_CONFIG_ENCRYPTION_KEY`.
+
+Категории — это presentation-метаданные, управляемые кодом.
+`GlobalConfigCategory` сохраняет только числовой
+`SettingDefinition.category_id`, а `GlobalConfig` сохраняет FK на эту
+строку. Admin получает код и отображаемое название из
+`GLOBAL_CONFIG_CATEGORIES`. Каталог объявляется обычными
+`CategoryDefinition`; отдельный Enum категорий не нужен.
 
 Ключи держите в проектном `StrEnum`. Тот же член передавайте в
 `SettingDefinition`, `get_value()` и `set_value()`.
@@ -45,12 +53,12 @@ GLOBAL_CONFIG_DEFINITIONS = [
 
 `GlobalConfigInitializationService.initialize()` выполняется на `post_migrate` приложения `django_gc`:
 
-- создать отсутствующие категории (`bulk_create`)
+- создать отсутствующие строки категорий с числовыми ID
 - создать отсутствующие ключи с объявленным default
 - обновить метаданные существующих ключей: description, тип, категория, nullable, read-only, `is_always_update`
 - обновить `variables` только при `is_always_update` для choice-типов
 - не заменять рабочее `value`
-- сохранить названия категорий, которые менял администратор
+- отклонить ключ, числовая категория которого отсутствует в `GLOBAL_CONFIG_CATEGORIES`
 - запланировать один refresh кэша после commit
 
 Новые ключи нельзя создать через `save()` или Admin. Они появляются только из definitions.

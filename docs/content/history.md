@@ -4,13 +4,14 @@ sidebar_position: 7
 ---
 
 <Since v="1.0.1" />
+<Changed v="1.1.4" />
 
 Admin history is Django's built-in `LogEntry` journal. The package does not
 depend on `django-simple-history`.
 
-When an operator changes a value or a category name in Admin, Django records
-who changed it and when. Open **History** on the object page to see those
-entries.
+When an operator changes a value in Admin, Django records who changed it and
+when. Category labels come from project definitions and are not editable
+database values. Open **History** on the object page to see value changes.
 
 `set_value()` is a programmatic write. It does not create an Admin `LogEntry`.
 Projects that need an audit trail for service writes should record it in their

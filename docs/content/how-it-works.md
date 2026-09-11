@@ -4,7 +4,7 @@ sidebar_position: 3
 ---
 
 <Since v="1.0.1" />
-<Changed v="1.0.3" />
+<Changed v="1.1.4" />
 
 Runtime code reads values only through `get_value()`. ORM reads of a single key, custom cache-aside keys, and domain fallbacks are out of scope for this package.
 
@@ -49,4 +49,6 @@ There is no single-row database fallback in `get_value()`. Keys have no TTL. A c
 
 Initialization suppresses per-row refresh and schedules one full commit-time refresh.
 
-Rows live in explicit tables `global_configs` and `global_config_categories`.
+Rows live in the explicit `global_configs` and `global_config_categories`
+tables. The category table stores only numeric identifiers, while its Admin
+labels come from project definitions.

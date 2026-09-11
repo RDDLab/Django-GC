@@ -1,17 +1,34 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from django_gc.conf import get_category_definition
+
 
 class GlobalConfigCategory(models.Model):
     """
-    Редактируемая категория системных глобальных настроек.
+    Хранить числовой идентификатор системной категории.
+
+    Код и отображаемое название принадлежат project definitions и в БД не
+    дублируются.
     """
 
     id = models.PositiveSmallIntegerField(primary_key=True, editable=False, verbose_name=_('ID'))
-    code = models.SlugField(max_length=64, unique=True, editable=False, verbose_name=_('Код'))
-    name = models.TextField(verbose_name=_('Название'))
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Дата создания'))
-    updated_at = models.DateTimeField(auto_now=True, verbose_name=_('Дата изменения'))
+
+    @property
+    def code(self) -> str:
+        """
+        Получить код категории из project definitions.
+        """
+        definition = get_category_definition(category_id=self.id)
+        return definition.code if definition is not None else str(self.id)
+
+    @property
+    def name(self) -> str:
+        """
+        Получить отображаемое название категории из project definitions.
+        """
+        definition = get_category_definition(category_id=self.id)
+        return definition.name if definition is not None else str(self.id)
 
     def __str__(self) -> str:
         return self.name

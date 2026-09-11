@@ -7,7 +7,7 @@ import Heading from '@theme/Heading';
 
 import styles from './index.module.css';
 
-const PACKAGE_VERSION = '1.0.1';
+const PACKAGE_VERSION = '1.1.4';
 
 type Copy = {
   title: string;

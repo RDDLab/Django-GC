@@ -52,13 +52,11 @@ class GlobalConfigInitializationService(Singleton):
     @classmethod
     def _create_missing_categories(cls) -> None:
         """
-        Создать только отсутствующие категории, сохранив ручные изменения названий.
+        Создать отсутствующие числовые категории из project definitions.
         """
         existing_ids: set[int] = set(GlobalConfigCategory.objects.values_list('id', flat=True))
         categories = [
-            GlobalConfigCategory(id=item.id, code=item.code, name=item.name)
-            for item in get_category_definitions()
-            if item.id not in existing_ids
+            GlobalConfigCategory(id=item.id) for item in get_category_definitions() if item.id not in existing_ids
         ]
         if categories:
             GlobalConfigCategory.objects.bulk_create(categories)
@@ -74,7 +72,10 @@ class GlobalConfigInitializationService(Singleton):
         new_configs: list[GlobalConfig] = []
 
         for item in get_setting_definitions():
-            category: GlobalConfigCategory = categories_by_id[item.category_id]
+            try:
+                category = categories_by_id[item.category_id]
+            except KeyError:
+                raise KeyError(f'Не объявлена категория GlobalConfig с id={item.category_id}.') from None
             config = existing_configs.get(str(item.key))
             if config is None:
                 new_configs.append(self._build_config(item=item, category=category))

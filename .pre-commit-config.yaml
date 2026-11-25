@@ -31,9 +31,6 @@ repos:
       - id: ruff-check
         args: ["--fix", "--config=ruff.toml"]
         exclude: (^|/)migrations/
-      - id: ruff-format
-        args: ["--config=ruff.toml"]
-        exclude: (^|/)migrations/
 
   - repo: local
     hooks:

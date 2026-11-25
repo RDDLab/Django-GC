@@ -34,6 +34,10 @@ uv run ruff check --config ruff.toml .
 uv run pyrefly check
 ```
 
+Use Ruff as a linter in pre-commit. Omit optional trailing commas in imports,
+collections, calls, and signatures. Put each name in a nonempty `__all__` list
+on its own line and keep the declared export order.
+
 ## Testing
 
 ```bash

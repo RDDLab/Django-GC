@@ -10,6 +10,10 @@ Documentation: https://django-gc.rdd-lab.com/
 - Use `uv run` for Python commands (`uv run pytest`, `uv run ruff check .`).
 - Full typing, `pyrefly` strict. Absolute imports only.
 - Pass arguments by keyword where possible.
+- Use Ruff for linting only. Keep the formatter out of pre-commit.
+- Omit optional trailing commas in imports, collections, calls, and signatures.
+- Write every name in a nonempty `__all__` list on its own line. Keep the
+  declared export order and omit the optional comma after the last name.
 - Runtime code must read values through `get_value()`, not the ORM.
 - Add tests when behaviour changes.
 - Public API changes need a `CHANGELOG.md` entry.

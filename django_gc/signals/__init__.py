@@ -5,5 +5,5 @@ from django_gc.signals.refresh_global_configs_cache import refresh_global_config
 __all__ = [
     'normalize_global_config_value',
     'prevent_global_config_deletion',
-    'refresh_global_configs_cache',
+    'refresh_global_configs_cache'
 ]

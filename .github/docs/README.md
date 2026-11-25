@@ -1,7 +1,7 @@
 # Deploy the Django-GC documentation
 
-Pushes to `main` and pull requests targeting it run **Security checks**
-and the test workflow. To deploy,
+Pushes to any branch and pull requests run **Security checks**.
+Pushes to protected branches also run the test workflow. To deploy,
 run **Documentation** on `main` or dispatch it from another workflow.
 The release workflow dispatches it after PyPI accepts the package. It
 passes the release commit, which must belong to `main`. A manual run

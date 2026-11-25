@@ -73,7 +73,7 @@ npm run docs:serve
 
 ## CI, releases and deployment
 
-Pushes to `main` and pull requests targeting it run Security checks and the test pipeline. The test pipeline uses the dependency lock, verifies the Django migration state, runs the Python and Django matrix, builds both Python distributions and verifies the English and Russian documentation. The security workflow scans secrets, Python, Django templates, documentation JavaScript and TypeScript, and workflow files. It audits locked Python and npm dependencies.
+Pushes to any branch and pull requests run Security checks. Pushes to protected branches also run the test pipeline. The test pipeline uses the dependency lock, verifies the Django migration state, runs the Python and Django matrix, builds both Python distributions and verifies the English and Russian documentation. The security workflow scans secrets, Python, Django templates, documentation JavaScript and TypeScript, and workflow files. It audits locked Python and npm dependencies.
 
 The release workflow verifies the selected commit before uploading wheel and sdist to PyPI using Trusted Publishing. After upload it dispatches the documentation workflow on `main` for that commit. The documentation workflow rechecks its ancestry and deploys through a dedicated SSH command. The deployment server builds the site with rootless Docker and restores the previous image and port if the new container fails its health check.
 

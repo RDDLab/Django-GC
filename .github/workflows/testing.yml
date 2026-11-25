@@ -2,9 +2,7 @@ name: Testing Django-GC pipeline
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: ['**']
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -21,6 +19,7 @@ env:
 
 jobs:
   lint:
+    if: github.event_name != 'push' || github.ref_protected
     name: Python lint, types and Django checks
     runs-on: ubuntu-latest
     timeout-minutes: 10

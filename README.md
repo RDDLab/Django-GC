@@ -1,7 +1,7 @@
 ![Logo](https://github.com/RDDLab/Django-GlobalConfig/raw/main/docs/static/img/logo.svg)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Version: 1.1.5](https://img.shields.io/badge/version-1.1.5-blue.svg?style=for-the-badge)](https://github.com/RDDLab/Django-GlobalConfig/releases/tag/1.1.5)
+[![Version: 1.1.6](https://img.shields.io/badge/version-1.1.6-blue.svg?style=for-the-badge)](https://github.com/RDDLab/Django-GlobalConfig/releases/tag/1.1.6)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge)](https://docs.astral.sh/ruff)
 [![pyrefly](https://img.shields.io/endpoint?url=https://pyrefly.org/badge.json&style=for-the-badge)](https://pyrefly.org)
 [![PyPI](https://img.shields.io/pypi/v/django-gc?style=for-the-badge)](https://pypi.org/project/django-gc/)
@@ -26,14 +26,15 @@
 
 # Django-GC
 
-Django-GC stores typed runtime settings in the database and serves them from Django's cache. Application code never reads a value through the ORM. The project owns the keys; this package is the mechanism.
+Django-GC stores typed runtime settings in the database and uses a shared cache when configured. Application code never reads a value through the ORM. The project owns the keys; this package is the mechanism.
 
 ## Features
 
 - **Code-declared keys** — categories and definitions live in Django settings and are synchronized by `initialize_global_configs`.
 - **Typed values** — strings, numbers, dates, arrays, choices, JSON, UUID, and optional secure secrets.
 - **Targeted cache updates** — saving one setting refreshes only its typed cache entry.
-- **Full recovery snapshot** — `get_value()` never falls back to a single-row ORM read on cache miss.
+- **Full recovery snapshot** — a miss in a shared cache rebuilds the snapshot.
+- **Direct database reads** — local-memory and dummy caches use current values from the database.
 - **Stock Django Admin** — edit values with standard `ModelAdmin` and Django's built-in change history.
 - **Optional Celery** — periodic full snapshot refresh.
 - **Fully typed** — ships `py.typed`; compatible with pyrefly and standard type checkers.
@@ -48,7 +49,7 @@ Django-GC stores typed runtime settings in the database and serves them from Dja
 ## Installation
 
 ```bash
-pip install 'django-gc>=1.1.5'
+pip install 'django-gc>=1.1.6'
 ```
 
 ```python

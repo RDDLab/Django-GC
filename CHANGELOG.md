@@ -4,6 +4,19 @@ All notable changes to **Django-GC** are documented in this file.
 
 ## [Unreleased]
 
+## [1.1.6] — 2026-11-26
+
+### Fixed
+
+- Read settings directly from the database with Django's local-memory or dummy cache.
+  Snapshot refreshes are skipped in this mode so each worker reads current values.
+
+### Changed
+
+- Scan the release revision, then verify that it is the current head of `main` and that
+  its latest test workflow succeeded. Release and documentation deployment reuse
+  existing test results.
+
 ## [1.1.5] — 2026-11-26
 
 ### Added
@@ -89,5 +102,6 @@ All notable changes to **Django-GC** are documented in this file.
 [1.0.2]: https://github.com/RDDLab/Django-GlobalConfig/releases/tag/1.0.2
 [1.0.1]: https://github.com/RDDLab/Django-GlobalConfig/releases/tag/1.0.1
 
-[Unreleased]: https://github.com/RDDLab/Django-GlobalConfig/compare/1.1.5...HEAD
+[Unreleased]: https://github.com/RDDLab/Django-GlobalConfig/compare/1.1.6...HEAD
+[1.1.6]: https://github.com/RDDLab/Django-GlobalConfig/compare/1.1.5...1.1.6
 [1.1.5]: https://github.com/RDDLab/Django-GlobalConfig/compare/1.1.4...1.1.5

@@ -6,7 +6,9 @@ sidebar_position: 3
 <Since v="1.0.1" />
 <Changed v="1.1.4" />
 
-Runtime code reads values only through `get_value()`. ORM reads of a single key, custom cache-aside keys, and domain fallbacks are out of scope for this package.
+Runtime code reads settings through `get_value()`. The following flow applies when a shared cache is configured.
+
+<Changed v="1.1.6" />
 
 ```mermaid
 flowchart TD
@@ -38,7 +40,7 @@ flowchart TD
 8. Publish values and the readiness marker with `set_many` while the lock is still owned.
 9. Resolve the requested key. `SECURE` is decrypted only in memory.
 
-There is no single-row database fallback in `get_value()`. Keys have no TTL. A committed save refreshes that key directly; full refresh handles cache-miss recovery and reconciliation.
+Without a shared backend (`LocMemCache` or `DummyCache`), `get_value()` reads the requested row directly. Entries in a shared snapshot have no TTL. A committed save refreshes that key directly; full refresh handles cache-miss recovery and reconciliation.
 
 ## Refresh triggers
 

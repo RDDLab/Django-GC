@@ -10,7 +10,7 @@ This page is the shortest path from an empty Django project to a working Django-
 ## Installation
 
 ```bash
-pip install 'django-gc>=1.1.5'
+pip install 'django-gc>=1.1.6'
 ```
 
 ```python
@@ -21,7 +21,9 @@ INSTALLED_APPS = [
 ]
 ```
 
-Use a shared cache in production (Redis, Valkey, or another remote backend). The test suite uses locmem.
+<Changed v="1.1.6" />
+
+Configure a shared cache such as Redis or Valkey to serve settings from a snapshot. With Django’s default `LocMemCache` or `DummyCache`, settings are read directly from the database.
 
 ## Django settings
 

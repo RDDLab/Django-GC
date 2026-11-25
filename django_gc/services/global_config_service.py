@@ -36,8 +36,7 @@ class GlobalConfigService(Singleton):
     """
     Read and write typed GlobalConfig values and coordinate publication of the cache snapshot.
 
-    Runtime reads use the cache by default. The database remains the source of truth for snapshot rebuilds
-    and explicit fresh reads.
+    Runtime reads use a shared cache when configured. Process-local and dummy backends use database reads.
     """
 
     CACHE_KEY_TEMPLATE = 'global-config:{key}'
@@ -60,11 +59,11 @@ class GlobalConfigService(Singleton):
         """
         Return the typed value for a canonical key or a declared alias.
 
-        Bypass the cache with use_cache=False. Otherwise, rebuild the snapshot synchronously on a miss and
-        retry the lookup. Raise GlobalConfigNotFoundError if the setting is still unavailable.
+        Bypass the cache with use_cache=False or when the backend cannot hold a shared snapshot.
+        A miss in a shared cache rebuilds the snapshot before retrying the lookup.
         """
         key = resolve_key(key=str(key))
-        if not use_cache:
+        if not use_cache or not self._cache.is_shared:
             config = GlobalConfig.objects.filter(pk=str(key)).first()
             if config is None:
                 raise GlobalConfigNotFoundError(key=str(key))
@@ -89,10 +88,10 @@ class GlobalConfigService(Singleton):
         """
         Return typed values keyed by the supplied names, including any aliases.
 
-        With use_cache=False, fetch all canonical rows in a single query in the caller's database
-        transaction. Raise GlobalConfigNotFoundError when a requested row is missing.
+        Fresh reads and backends without shared storage fetch all canonical rows in a single query in the
+        caller's database transaction. Raise GlobalConfigNotFoundError when a requested row is missing.
         """
-        if use_cache:
+        if use_cache and self._cache.is_shared:
             return {key: self.get_value(key=key) for key in keys}
         canonical_keys = {key: resolve_key(key=key) for key in keys}
         configs = GlobalConfig.objects.filter(pk__in=canonical_keys.values())
@@ -113,8 +112,10 @@ class GlobalConfigService(Singleton):
         Refresh the cache entry for a single setting under the shared refresh lock.
 
         Invalidate the old entry before reading the row and publish the parsed replacement after checking
-        lock ownership.
+        lock ownership. Skip the operation when settings are read directly from the database.
         """
+        if not self._cache.is_shared:
+            return
         key = resolve_key(key=str(key))
         lock = self._cache.get_lock(key=self.REFRESH_LOCK_CACHE_KEY, timeout=self.REFRESH_LOCK_TIMEOUT_SECONDS)
         acquired = lock.acquire(blocking=True, blocking_timeout=self.REFRESH_LOCK_BLOCKING_TIMEOUT_SECONDS)
@@ -146,8 +147,10 @@ class GlobalConfigService(Singleton):
         Rebuild the full cache snapshot under the refresh lock and return the number of settings written.
 
         When requested_cache_key is supplied, reuse a complete snapshot containing that entry if another
-        worker publishes it while this call waits. Reusing a snapshot returns zero.
+        worker publishes it while this call waits. Return zero on reuse or when there is no shared cache.
         """
+        if not self._cache.is_shared:
+            return 0
         lock = self._cache.get_lock(key=self.REFRESH_LOCK_CACHE_KEY, timeout=self.REFRESH_LOCK_TIMEOUT_SECONDS)
         acquired = lock.acquire(blocking=True, blocking_timeout=self.REFRESH_LOCK_BLOCKING_TIMEOUT_SECONDS)
         if not acquired:
@@ -221,7 +224,10 @@ class GlobalConfigService(Singleton):
         Require the readiness marker and a typed cache entry for every active definition.
 
         Check the cache and the code-defined catalog without querying the settings tables.
+        Return False when settings are read directly from the database.
         """
+        if not self._cache.is_shared:
+            return False
         marker = self._cache.get(key=self.SNAPSHOT_READY_CACHE_KEY, default=False)
         if marker is not True:
             return False

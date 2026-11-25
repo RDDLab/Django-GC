@@ -10,7 +10,7 @@ sidebar_position: 2
 ## Установка
 
 ```bash
-pip install 'django-gc>=1.1.5'
+pip install 'django-gc>=1.1.6'
 ```
 
 ```python
@@ -21,7 +21,9 @@ INSTALLED_APPS = [
 ]
 ```
 
-В production используйте общий кэш (Redis, Valkey или другой remote backend). Тесты используют locmem.
+<Changed v="1.1.6" />
+
+Настройте общий кэш, например Redis или Valkey, чтобы читать настройки из снимка. При `LocMemCache` по умолчанию или `DummyCache` библиотека читает настройки напрямую из базы.
 
 ## Django settings
 

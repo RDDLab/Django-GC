@@ -34,4 +34,6 @@ from django_gc.tasks import refresh_global_configs_cache
 Keep keys in a project `StrEnum` and pass that member to `get_value()` and
 `set_value()`. Do not scatter raw key strings at call sites.
 
-Use a shared cache backend in multi-process deployments. Locmem does not share a snapshot across workers.
+<Changed v="1.1.6" />
+
+Use a cache backend shared by all workers and web processes to serve a snapshot. With `LocMemCache` or `DummyCache`, reads go to the database and the Celery refresh task returns `0`.

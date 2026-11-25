@@ -1,8 +1,11 @@
+from unittest.mock import patch
+
 from django.core.cache import cache
 from django.test import TestCase
 
 from django_gc.models import GlobalConfig
 from django_gc.services import GlobalConfigService
+from django_gc.services.cache import CacheBackend
 from django_gc.tasks import refresh_global_configs_cache
 
 
@@ -17,6 +20,7 @@ class GlobalConfigTaskTestCase(TestCase):
     def tearDown(self) -> None:
         cache.clear()
 
+    @patch.object(CacheBackend, 'is_shared', True)
     def test_task_refreshes_snapshot(self) -> None:
         """
         Call the refresh task and check that it publishes the complete snapshot.

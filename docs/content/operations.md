@@ -4,6 +4,10 @@ title: Upgrade and operations
 
 <Changed v="1.1.5" />
 
+## Upgrade from 1.1.5
+
+Version 1.1.6 adds no migrations. `LocMemCache` and `DummyCache` now use database reads. Deploy workers together so process-local snapshots from the previous version stop serving reads.
+
 ## Upgrade from 1.1.4
 
 1. Apply the schema migrations.
@@ -23,7 +27,7 @@ If an integrating app has system checks that require initialized keys, use `pyth
 
 ## Share and verify the snapshot
 
-Use a shared cache such as Redis or Valkey for web processes and workers. Select the alias with `GLOBAL_CONFIG_CACHE_ALIAS` and isolate deployments with Django's `KEY_PREFIX`. Define `GLOBAL_CONFIG_ENCRYPTION_KEY` through the deployment secret store before using `SECURE` settings.
+For snapshot mode, use a shared cache such as Redis or Valkey for web processes and workers. Select the alias with `GLOBAL_CONFIG_CACHE_ALIAS` and isolate deployments with Django's `KEY_PREFIX`. Define `GLOBAL_CONFIG_ENCRYPTION_KEY` through the deployment secret store before using `SECURE` settings.
 
 ```python
 from django_gc import is_cache_ready, refresh_cache

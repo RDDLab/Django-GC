@@ -118,8 +118,8 @@ jobs:
           ACTIONLINT_VERSION: v1.7.12
         run: |
           go run "github.com/rhysd/actionlint/cmd/actionlint@$ACTIONLINT_VERSION"
-          for script in .github/docs/deploy-docs.sh .github/docs/test-deploy.sh .github/scripts/compile-translations.sh; do
+          for script in .github/docs/*.sh .github/scripts/compile-translations.sh; do
             bash -n "$script"
           done
-          shellcheck .github/docs/deploy-docs.sh .github/docs/test-deploy.sh .github/scripts/compile-translations.sh
+          shellcheck .github/docs/*.sh .github/scripts/compile-translations.sh
           bash .github/docs/test-deploy.sh

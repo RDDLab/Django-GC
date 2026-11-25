@@ -16,11 +16,15 @@ jobs:
       source_sha: ${{ github.sha }}
 
   checks:
-    name: Verify package revision
+    name: Verify successful tests for main HEAD
     needs: security
-    uses: ./.github/workflows/testing.yml
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/tested-revision.yml
     with:
       source_sha: ${{ github.sha }}
+      require_main_head: true
 
   release-build:
     needs: checks
@@ -30,15 +34,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          ref: ${{ github.sha }}
           persist-credentials: false
-
-      - name: Require release revision from main
-        run: |
-          if ! git merge-base --is-ancestor HEAD origin/main; then
-            echo "::error::The package revision must be a commit in main."
-            exit 1
-          fi
 
       - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
         with:
@@ -63,6 +60,7 @@ jobs:
     needs: release-build
     timeout-minutes: 10
     permissions:
+      contents: read
       id-token: write
 
     environment:
@@ -75,6 +73,16 @@ jobs:
         with:
           name: release-dists
           path: dist/
+
+      - name: Confirm the package revision is still main HEAD
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')
+          if [[ "$GITHUB_SHA" != "$main_sha" ]]; then
+            echo "::error::Main advanced before publishing. Publish the new tested head of main."
+            exit 1
+          fi
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3

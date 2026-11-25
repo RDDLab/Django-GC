@@ -3,6 +3,8 @@ from typing import Any
 from uuid import uuid4
 
 from django.core.cache import caches
+from django.core.cache.backends.dummy import DummyCache
+from django.core.cache.backends.locmem import LocMemCache
 
 from django_gc.exceptions import GlobalConfigLockNotOwnedError
 
@@ -70,6 +72,15 @@ class CacheBackend:
         Bind cache operations to the Django backend registered under alias.
         """
         self._cache = caches[alias]
+
+    @property
+    def is_shared(self) -> bool:
+        """
+        Report whether the configured backend can hold a snapshot shared by workers.
+
+        Disallow process-local and dummy backends. Other backends must be configured for shared access.
+        """
+        return not isinstance(self._cache, (LocMemCache, DummyCache))
 
     def get(self, key: str, default: Any = None) -> Any:
         """

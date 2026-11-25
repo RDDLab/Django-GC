@@ -9,8 +9,8 @@ def get_value(key: str | StrEnum, *, use_cache: bool = True) -> Any:
     """
     Return the typed value of a setting identified by its current key or a declared alias.
 
-    The default cache-backed read refreshes the snapshot on a miss. Pass use_cache=False to read the row
-    directly. A missing setting or an invalid stored value raises a GlobalConfigError subclass.
+    Use a shared cache by default and refresh its snapshot on a miss. Read the database directly when a local
+    or dummy backend is configured or use_cache is False. Missing or invalid values raise GlobalConfigError.
     """
     from django_gc.services.global_config_service import GlobalConfigService
 
@@ -33,8 +33,8 @@ def refresh_cache() -> int:
     """
     Rebuild the cache snapshot from the declared settings and return the number of entries written.
 
-    An incomplete or invalid snapshot raises an error before it can be published. A completed refresh by
-    another worker can return zero when the wait for the refresh lock times out.
+    An incomplete or invalid snapshot raises an error before publication. Return zero when a different
+    worker has already published an acceptable snapshot or when there is no shared cache to refresh.
     """
     from django_gc.services.global_config_service import GlobalConfigService
 
@@ -45,7 +45,7 @@ def is_cache_ready() -> bool:
     """
     Check the cache marker and all typed entries required by the current definitions.
 
-    Return a boolean without querying the settings tables.
+    Return False without a shared cache. This check never queries the settings tables.
     """
     from django_gc.services.global_config_service import GlobalConfigService
 

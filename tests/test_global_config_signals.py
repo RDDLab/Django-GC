@@ -1,10 +1,12 @@
 from functools import partial
+from unittest.mock import patch
 
 from django.core.cache import cache
 from django.test import TestCase
 
 from django_gc.models import GlobalConfig
 from django_gc.services import GlobalConfigInitializationService, GlobalConfigService
+from django_gc.services.cache import CacheBackend
 from django_gc.signals.callbacks import refresh_global_config_value_safely, refresh_global_configs_cache_safely
 from django_gc.signals.refresh_global_configs_cache import refresh_global_configs_cache
 
@@ -62,12 +64,12 @@ class GlobalConfigSignalsTestCase(TestCase):
         Simulate a failed post-commit cache refresh and verify that the exception is logged and contained.
         """
 
-        class BrokenCache:
-            def get_lock(self, **_kwargs: object) -> object:
-                raise RuntimeError('cache unavailable')
-
-        self.service._cache = BrokenCache()  # type: ignore[assignment]
-        with self.assertLogs('django_gc.signals.callbacks', level='ERROR') as log_context:
+        with (
+            patch.object(CacheBackend, 'is_shared', True),
+            patch.object(self.service._cache, 'get_lock', side_effect=RuntimeError('cache unavailable')) as get_lock,
+            self.assertLogs('django_gc.signals.callbacks', level='ERROR') as log_context
+        ):
             refresh_global_configs_cache_safely()
 
+        get_lock.assert_called_once()
         self.assertEqual(len(log_context.records), 1)

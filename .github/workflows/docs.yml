@@ -45,23 +45,39 @@ jobs:
       source_sha: ${{ needs.revision.outputs.source_sha }}
 
   checks:
-    name: Verify deployment revision
+    name: Verify successful tests for deployment revision
     needs: [revision, security]
-    uses: ./.github/workflows/testing.yml
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/tested-revision.yml
     with:
       source_sha: ${{ needs.revision.outputs.source_sha }}
 
+  prepare:
+    name: Prepare documentation server
+    needs: checks
+    uses: ./.github/workflows/prepare-docs.yml
+
   deploy:
     name: Deploy documentation over SSH
-    needs: [revision, checks]
+    needs: [revision, prepare]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
       name: docs-production
       url: https://django-gc.rdd-lab.com/
-    permissions: {}
+    permissions:
+      contents: read
     steps:
-      - name: Request server-side build and deployment
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Send documentation source and deploy
+        shell: bash
         env:
           SOURCE_SHA: ${{ needs.revision.outputs.source_sha }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -71,35 +87,20 @@ jobs:
           SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
           DOCS_PORT: ${{ vars.DOCS_PORT }}
         run: |
-          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ||
-                ! "$SSH_HOST" =~ ^[[:alnum:].:-]+$ ||
-                ! "$SSH_PORT" =~ ^[1-9][0-9]{0,4}$ ]] ||
-             (( SSH_PORT > 65535 )) ||
-             [[ ! "$SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ||
-                -z "$SSH_PRIVATE_KEY" || ! "$SSH_HOST_KEY" =~ ^ssh-ed25519[[:blank:]]+[A-Za-z0-9+/]+=*$ ]]; then
-            echo "::error::Invalid or missing docs-production SSH settings."
+          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ || ! "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Full source and workflow commit SHAs are required."
             exit 1
           fi
-
           if [[ ! "$DOCS_PORT" =~ ^[1-9][0-9]{0,4}$ ]] || (( DOCS_PORT > 65535 )); then
-            echo "::error::Set the docs-production variable DOCS_PORT to a free host port from 1 to 65535."
+            echo "::error::Set DOCS_PORT to a free host port from 1 to 65535."
             exit 1
           fi
 
-          umask 077
-          ssh_dir=$(mktemp -d)
-          trap 'rm -rf -- "$ssh_dir"' EXIT
-          printf '%s\n' "$SSH_PRIVATE_KEY" > "$ssh_dir/key"
-          known_host=$SSH_HOST
-          if (( SSH_PORT != 22 )); then
-            known_host="[$SSH_HOST]:$SSH_PORT"
+          source_paths=(docs)
+          if git cat-file -e "$SOURCE_SHA:.github/docs/Dockerfile" 2>/dev/null; then
+            source_paths+=(.github/docs)
           fi
-          printf '%s %s\n' "$known_host" "$SSH_HOST_KEY" > "$ssh_dir/known_hosts"
-          unset SSH_PRIVATE_KEY
 
-          ssh -F /dev/null -nT -p "$SSH_PORT" -l "$SSH_USER" -i "$ssh_dir/key" \
-            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            -o "UserKnownHostsFile=$ssh_dir/known_hosts" -o GlobalKnownHostsFile=/dev/null \
-            -o ConnectTimeout=15 \
-            -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
-            -- "$SSH_HOST" "$SOURCE_SHA $DOCS_PORT"
+          git archive "$SOURCE_SHA" "${source_paths[@]}" |
+            bash .github/docs/ssh.sh \
+              "bash \"\$HOME/.local/share/django-gc-docs/$GITHUB_SHA/deploy-docs.sh\" $SOURCE_SHA $DOCS_PORT"

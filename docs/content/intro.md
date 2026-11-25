@@ -9,7 +9,7 @@ sidebar_position: 1
 
 ## What Django-GC is
 
-Django-GC stores typed runtime settings in the database and serves them from Django's cache. Application code never reads a value through the ORM. The project owns the keys; this package is the mechanism.
+Django-GC stores typed runtime settings in the database and uses a shared cache when configured. Application code never reads a value through the ORM. The project owns the keys; this package is the mechanism.
 
 It is not a replacement for `django.conf.settings`. Static deploy-time settings stay in Django settings. This package is for values operators change at runtime: feature flags, limits, secrets that rotate, and similar knobs.
 
@@ -33,7 +33,7 @@ It is not a replacement for `django.conf.settings`. Static deploy-time settings 
 | 3.15 | 6.1.3 |
 
 CI runs the full test suite with the locked Django version and the minimum for each Python version.
-See the [upgrade and operations guide](./operations.md) for the 1.1.5 deployment sequence.
+See the [upgrade and operations guide](./operations.md) for the 1.1.6 upgrade and deployment sequence.
 
 Celery is optional and only needed for a periodic refresh task:
 

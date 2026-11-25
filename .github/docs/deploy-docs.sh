@@ -2,36 +2,28 @@
 set -euo pipefail
 umask 077
 
-if [[ ! "${SSH_ORIGINAL_COMMAND:-}" =~ ^([0-9a-f]{40})[[:blank:]]([1-9][0-9]{0,4})$ ]] ||
-   (( BASH_REMATCH[2] > 65535 )); then
-    echo 'Expected a full commit SHA and a host port from 1 to 65535 as the SSH command.' >&2
+if (( $# != 2 )) || [[ ! "$1" =~ ^[0-9a-f]{40}$ || ! "$2" =~ ^[1-9][0-9]{0,4}$ ]] ||
+   (( $2 > 65535 )); then
+    echo 'Expected a full commit SHA and a host port from 1 to 65535.' >&2
     exit 1
 fi
-sha=${BASH_REMATCH[1]}
-export DOCS_PORT="${BASH_REMATCH[2]}"
+sha=$1
+export DOCS_PORT=$2
 
 state_dir="$HOME/.local/state/django-gc-docs"
-repo="$state_dir/repository.git"
-compose_file=/usr/local/share/django-gc-docs/compose.yml
+deploy_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+compose_file="$deploy_dir/compose.yml"
 
-# Use the dedicated rootless daemon even when SSH has no login session.
-DOCKER_HOST="unix:///run/user/$(id -u)/docker.sock"
-export DOCKER_HOST
-unset DOCKER_CONTEXT
+# Use a rootless socket when SSH did not start a session and Docker has no custom context.
+docker_socket="/run/user/$(id -u)/docker.sock"
+if [[ -z "${DOCKER_HOST:-}" && -z "${DOCKER_CONTEXT:-}" && -S "$docker_socket" ]] &&
+   [[ "$(docker context show)" == default ]]; then
+    export DOCKER_HOST="unix://$docker_socket"
+fi
 
 mkdir -p "$state_dir"
 exec 9>"$state_dir/deploy.lock"
 flock -w 300 9
-
-if [[ ! -d "$repo/objects" ]]; then
-    git init --bare "$repo"
-fi
-git --git-dir="$repo" fetch --no-tags https://github.com/RDDLab/Django-GlobalConfig.git \
-    '+refs/heads/main:refs/heads/main'
-if ! git --git-dir="$repo" merge-base --is-ancestor "$sha" refs/heads/main; then
-    echo 'The documentation revision must be a commit in main.' >&2
-    exit 1
-fi
 
 compose() {
     docker compose --project-name django-gc-docs --env-file /dev/null --file "$compose_file" "$@"
@@ -67,8 +59,18 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-git --git-dir="$repo" archive "$sha" docs .github/docs | tar -x -C "$release_dir"
-dockerfile="$release_dir/.github/docs/Dockerfile"
+tar -xf - -C "$release_dir"
+if [[ -f "$release_dir/.github/docs/Dockerfile" ]]; then
+    build_context="$release_dir"
+    dockerfile="$build_context/.github/docs/Dockerfile"
+else
+    build_context="$release_dir/docs"
+    dockerfile="$build_context/Dockerfile"
+fi
+if [[ ! -f "$dockerfile" ]]; then
+    echo 'The documentation archive does not contain a Dockerfile.' >&2
+    exit 1
+fi
 export DOCS_IMAGE=django-gc-docs:"$sha"
 previous_container=$(compose ps --all --quiet docs)
 if [[ -n "$previous_container" ]]; then
@@ -80,7 +82,7 @@ if [[ -n "$previous_container" ]]; then
     fi
 fi
 
-docker build --file "$dockerfile" --tag "$DOCS_IMAGE" "$release_dir"
+docker build --file "$dockerfile" --tag "$DOCS_IMAGE" "$build_context"
 new_image=$(docker image inspect --format '{{.Id}}' "$DOCS_IMAGE")
 restore_service=true
 compose up --detach --wait --wait-timeout 60

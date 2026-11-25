@@ -5,6 +5,9 @@ sidebar_position: 8
 
 <Since v="1.0.1" />
 <Changed v="1.0.3" />
+<Changed v="1.1.6" />
+
+Django-GC reads directly from the database with `LocMemCache` or `DummyCache`. Batch reads fetch the requested settings in one query. In this mode `refresh_cache()` and the Celery task return `0`, and `is_cache_ready()` returns `False`. A configured shared backend must be available to read its snapshot.
 
 The snapshot lives in Django's cache, alias `GLOBAL_CONFIG_CACHE_ALIAS` (default `default`).
 
@@ -16,7 +19,7 @@ The snapshot lives in Django's cache, alias `GLOBAL_CONFIG_CACHE_ALIAS` (default
 
 Lock wait timeout is 35 seconds. If the wait times out, the service accepts an already published snapshot or raises `GlobalConfigRefreshLockTimeoutError`. It never publishes without owning the lock.
 
-Publish uses `cache.set_many`. On Redis/Valkey this is typically one `MSET`. Locmem is enough for tests and a single process.
+Publish uses `cache.set_many`. On Redis/Valkey this is typically one `MSET`.
 
 After one `GlobalConfig` row is saved and its transaction commits, Django-GC acquires the shared refresh lock, reads that row, and replaces only its typed cache entry. Other entries are not read or changed. Full snapshot publication remains the recovery and reconciliation mechanism for cache misses, initialization, and the optional periodic task.
 

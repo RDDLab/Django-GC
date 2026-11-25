@@ -25,11 +25,11 @@ You can import the public functions before Django initializes. Call them after D
 
 | Function | Returns | Notes |
 |---|---|---|
-| `get_value(key, *, use_cache=True)` | typed value | accepts a `str` or `StrEnum` key, may refresh the snapshot. `use_cache=False` reads the database |
+| `get_value(key, *, use_cache=True)` | typed value | accepts a `str` or `StrEnum` key. Reads the database with a local or dummy backend or with `use_cache=False` |
 | `set_value(key, value)` | `GlobalConfig` | existing keys only; refreshes that cache entry after commit |
 | `set_typed_value(*, key, value)` | `GlobalConfig` | added in 1.1.5. Validates and serializes a typed value for the declared key |
-| `refresh_cache()` | `int` | published key count, or `0` if another owner already published |
-| `is_cache_ready()` | `bool` | marker + every declared DTO, no database |
+| `refresh_cache()` | `int` | published key count, or `0` when another owner already published or a shared cache is unavailable by configuration |
+| `is_cache_ready()` | `bool` | checks the marker and every declared DTO. Returns `False` in database mode |
 
 ## Reading and locking multiple settings
 

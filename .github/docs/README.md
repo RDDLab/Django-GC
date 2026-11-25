@@ -1,7 +1,8 @@
 # Deploy the Django-GC documentation
 
 Pushes to any branch and pull requests run **Security checks**.
-Pushes to protected branches also run the test workflow. To deploy,
+The branch protection check dispatches testing for the current head of a protected branch.
+Pushes to unprotected branches create no testing jobs. To deploy,
 run **Documentation** on `main` or dispatch it from another workflow.
 The release workflow dispatches it after PyPI accepts the package. It
 passes the release commit, which must belong to `main`. A manual run
@@ -16,10 +17,10 @@ The server builds the Dockerfile from the selected revision. Both documentation
 deployment and PyPI publishing require security and test checks for the exact
 revision. The separate **Security checks** workflow runs Gitleaks, Python and
 Django SAST and dependency checks, JavaScript and TypeScript SAST and npm
-audit, then checks GitHub Actions. The shared CI then runs the Python checks
-and matrix one job at a time, builds the wheel and sdist, and type-checks
-and builds both documentation locales. A failing check stops publishing. Check
-the **Documentation** run for the deployment result.
+audit, then checks GitHub Actions. The verification job checks the result of
+the existing `testing.yml` run on `main` for that SHA after scanning.
+Publish the current head of `main` after its tests succeed. Check the
+**Documentation** run for the deployment result.
 
 ### PyPI Trusted Publishing
 
@@ -49,7 +50,7 @@ Add `DOCS_PORT` as an **Environment variable**.
 | `DOCS_PORT` | Free loopback port for this documentation site, for example `18080` |
 
 Assign each documentation site on the host its own `DOCS_PORT`.
-Set `SSH_USER` to `docs-deploy`. For `SSH_HOST_KEY`, use the first two
+Set `SSH_USER` to the existing deployment account, for example `deploy`. For `SSH_HOST_KEY`, use the first two
 fields of the server's `/etc/ssh/ssh_host_ed25519_key.pub`, for example
 `ssh-ed25519 AAAA…`. Obtain the key through the server console or its
 administrator. From the server console, print the two fields with:
@@ -70,39 +71,31 @@ ssh-keygen -t ed25519 -f ./gc-docs-ci -C django-gc-docs-ci
 gh secret set SSH_PRIVATE_KEY --env docs-production --repo RDDLab/Django-GlobalConfig < ./gc-docs-ci
 ```
 
-### Server setup
+### Server preparation and deployment
 
-1. Create the unprivileged `docs-deploy` account with a home directory,
-   a shell for OpenSSH's forced command, and its own rootless Docker
-   daemon with Docker Compose V2. Enable the rootless Docker user service
-   and lingering so the daemon remains available without a login session.
-   Install Git, Bash, tar, and flock. Configure outbound access to GitHub,
-   the npm registry, and the container registries. For a private Git
-   repository, configure read-only Git HTTPS credentials for this account.
-2. From a reviewed revision, install the deployment script and Compose
-   file as root-owned files. The CI key can invoke only this installed
-   script.
+Use an existing unprivileged account that can execute commands over SSH and
+access Docker with Compose V2. Bash, tar, and flock must be available on the host.
+The existing GitHub Actions key can use the `restrict` option in
+`~/.ssh/authorized_keys`. Use a key that can execute the workflow's SSH
+commands. For a key previously configured with `command=`, use a dedicated
+key without that option for both preparation and deployment.
 
-   ```sh
-   sudo install -m 0755 .github/docs/deploy-docs.sh /usr/local/bin/django-gc-docs-deploy
-   sudo install -d -m 0755 /usr/local/share/django-gc-docs
-   sudo install -m 0644 .github/docs/compose.yml /usr/local/share/django-gc-docs/compose.yml
-   ```
+After the checks succeed, `docs.yml` calls `prepare-docs.yml` using the
+same `docs-production` secrets. It sends the deployment script and
+Compose file over SSH and installs both together under
+`$HOME/.local/share/django-gc-docs/<workflow-sha>/`. Repeating the
+preparation for the same revision reuses the installed files. To prepare
+the server by itself, run **Prepare documentation server** from `main`.
 
-3. In the account's `.ssh/authorized_keys`, prepend
-   `restrict,command="/usr/local/bin/django-gc-docs-deploy"` to the
-   dedicated public key. Set `.ssh` to mode 0700 and `authorized_keys`
-   to 0600, both owned by `docs-deploy`. The GitHub Actions runner must
-   be able to reach the configured SSH port.
-4. Point the existing HTTPS reverse proxy for
-   `django-gc.rdd-lab.com` at `127.0.0.1:<DOCS_PORT>`. When you
-   change this setting, update the proxy upstream to match.
+The deploy job sends a source archive for the selected commit from its GitHub
+checkout. The SSH account builds and updates the container with its Docker
+context or socket. When a rootless socket is available and no custom Docker
+context is selected, the script uses that socket. Both jobs run with the
+existing account's permissions.
 
-Install both server files before the first deployment.
-The workflow sends the commit SHA and host port to the forced SSH command.
-The server validates both, fetches `main` from GitHub and checks that the
-commit belongs to it. Rootless Docker builds and serves the site. Angie
-and the container health check use its internal port `8080`.
+Point the HTTPS reverse proxy for `django-gc.rdd-lab.com` at
+`127.0.0.1:<DOCS_PORT>`. Angie and the container health check use the
+container's internal port `8080`.
 
 The deployment lock serializes updates. The container checks both `/`
 and `/ru/`. If the new deployment fails, the script restores the previous

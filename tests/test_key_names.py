@@ -1,4 +1,5 @@
 from dataclasses import replace
+from unittest.mock import patch
 
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
@@ -11,6 +12,7 @@ from django_gc.enums import SettingType
 from django_gc.models import GlobalConfig
 from django_gc.registry import authorize_changes
 from django_gc.services import GlobalConfigInitializationService, GlobalConfigService
+from django_gc.services.cache import CacheBackend
 from tests.definitions import TEST_DEFINITIONS
 
 
@@ -54,6 +56,7 @@ class PreviousKeysTestCase(TestCase):
     Exercise cache lookups, encrypted values, conflicting old rows and provider protections.
     """
 
+    @patch.object(CacheBackend, 'is_shared', True)
     def test_initialization_preserves_value_and_old_cache_cannot_override_current_value(self) -> None:
         """
         Copy a previous value into the missing canonical row and verify that an old cache entry cannot

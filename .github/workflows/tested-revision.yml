@@ -1,0 +1,78 @@
+name: Verify tested revision
+
+on:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Commit to verify against the testing workflow on main
+        required: true
+        type: string
+      require_main_head:
+        description: Require the selected commit to still be the head of main
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  verify:
+    name: Check completed tests on main
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify test results for the selected SHA
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          REQUIRE_MAIN_HEAD: ${{ inputs.require_main_head }}
+        run: |
+          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::A full commit SHA is required."
+            exit 1
+          fi
+
+          if [[ "$REQUIRE_MAIN_HEAD" == true ]]; then
+            if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" != refs/heads/main ]]; then
+              echo "::error::Run manual publishing from main."
+              exit 1
+            fi
+            main_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')
+            if [[ "$SOURCE_SHA" != "$main_sha" ]]; then
+              echo "::error::The package revision must be the current head of main."
+              exit 1
+            fi
+          fi
+
+          runs=$(gh api --paginate --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/testing.yml/runs" \
+            -f branch=main -f head_sha="$SOURCE_SHA" -F per_page=100)
+          run=$(jq -cs --arg sha "$SOURCE_SHA" '
+            [.[] | .workflow_runs[] | select(
+              .head_branch == "main" and .head_sha == $sha and (.event == "push" or .event == "workflow_dispatch")
+            )] | sort_by(.created_at, .id) | last // empty
+          ' <<< "$runs")
+          if [[ -z "$run" ]]; then
+            echo "::error::No testing.yml run on main was found for $SOURCE_SHA."
+            exit 1
+          fi
+
+          run_url=$(jq -r '.html_url' <<< "$run")
+          if ! jq -e '.status == "completed" and .conclusion == "success"' <<< "$run" > /dev/null; then
+            echo "::error::The latest testing.yml run for $SOURCE_SHA has not succeeded. $run_url"
+            exit 1
+          fi
+
+          run_id=$(jq -r '.id' <<< "$run")
+          jobs=$(gh api --paginate --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs" \
+            -f filter=all -F per_page=100)
+          if ! jq -es '
+            [.[] | .jobs[] | select(.name | startswith("Pytest (Python "))]
+            | group_by(.name) | map(max_by(.id))
+            | length > 0 and all(.[]; .conclusion == "success")
+          ' <<< "$jobs" > /dev/null; then
+            echo "::error::No successful Pytest matrix for $SOURCE_SHA. $run_url"
+            exit 1
+          fi
+          echo "Verified testing.yml for $SOURCE_SHA: $run_url"

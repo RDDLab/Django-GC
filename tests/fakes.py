@@ -48,6 +48,8 @@ class FakeCacheBackend:
     Keep snapshot entries in memory and expose cache operations for deterministic assertions.
     """
 
+    is_shared = True
+
     def __init__(self, values: dict[str, Any] | None = None, lock: FakeLock | None = None) -> None:
         self.values: dict[str, Any] = dict(values or {})
         self.lock = lock or FakeLock()

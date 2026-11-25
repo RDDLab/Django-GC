@@ -1,7 +1,8 @@
 # Deploy the Django-GC documentation
 
 Pushes to any branch and pull requests run **Security checks**.
-Pushes to protected branches also run the test workflow. To deploy,
+The branch protection check dispatches testing for the current head of a protected branch.
+Pushes to unprotected branches create no testing jobs. To deploy,
 run **Documentation** on `main` or dispatch it from another workflow.
 The release workflow dispatches it after PyPI accepts the package. It
 passes the release commit, which must belong to `main`. A manual run

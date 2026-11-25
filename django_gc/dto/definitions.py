@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
@@ -8,7 +8,9 @@ from django_gc.enums import SettingType
 @dataclass(frozen=True)
 class CategoryDefinition:
     """
-    Описать системную категорию GlobalConfig для инициализации.
+    Declare the numeric ID, stable code and display name for a settings category.
+
+    Initialization stores the ID. The admin resolves the code and name from the active definition.
     """
 
     id: int
@@ -19,7 +21,10 @@ class CategoryDefinition:
 @dataclass(frozen=True)
 class SettingDefinition:
     """
-    Описать управляемый кодом ключ GlobalConfig для инициализации.
+    Declare a runtime key, its default value, type, category and editor metadata.
+
+    Use previous_keys to identify eligible source rows when initializing a missing canonical key. Existing
+    values take precedence over defaults and aliases.
     """
 
     key: str | StrEnum
@@ -31,3 +36,5 @@ class SettingDefinition:
     is_read_only: bool = False
     variables: dict[str, Any] | None = None
     is_always_update: bool = False
+
+    previous_keys: list[str] = field(default_factory=list)

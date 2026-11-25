@@ -17,13 +17,15 @@ from tests.crypto import encrypt_text
 from tests.definitions import TEST_DEFINITIONS
 from tests.fakes import FakeCacheBackend, FakeLock
 
-PAGINATION_KEY = 'platform-pagination-size'
-SECRET_KEY = 'secret-token'
+PAGINATION_KEY = 'platform.pagination_size'
+SECRET_KEY = 'auth.secret_token'
 
 
 class GlobalConfigServiceTestCase(TestCase):
     """
-    Проверять согласованную публикацию и чтение снимка GlobalConfig.
+    Exercise typed reads and snapshot publication against a controlled cache and refresh lease.
+
+    Cover cache misses, failed refreshes and another worker publishing while a reader waits.
     """
 
     def setUp(self) -> None:
@@ -39,7 +41,7 @@ class GlobalConfigServiceTestCase(TestCase):
         self, *, backend: FakeCacheBackend | None = None
     ) -> tuple[GlobalConfigService, FakeCacheBackend]:
         """
-        Создать штатный сервис с детерминированным fake cache.
+        Supply a GlobalConfigService instance wired to the deterministic fake cache for one test.
         """
         backend = backend or FakeCacheBackend()
         self.service._cache = backend
@@ -47,7 +49,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def complete_snapshot(self) -> dict[str, object]:
         """
-        Построить полный типизированный снимок всех системных ключей.
+        Build the complete typed entry set and readiness marker used to simulate a successful publication.
         """
         values: dict[str, object] = {GlobalConfigService.SNAPSHOT_READY_CACHE_KEY: True}
         values.update(
@@ -62,7 +64,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_cache_hit_does_not_read_database(self) -> None:
         """
-        Вернуть типизированное значение из кэша без захвата refresh lock.
+        Verify that a typed cache hit returns immediately without a database query or refresh lease.
         """
         key = self.service.build_cache_key(key=PAGINATION_KEY)
         backend = FakeCacheBackend({key: GlobalConfigCacheValueDTO(value=42, value_type=SettingType.INTEGER)})
@@ -75,11 +77,11 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_refresh_value_replaces_only_changed_cache_entry(self) -> None:
         """
-        Перечитать и заменить один ключ, не пересобирая остальные значения.
+        Verify that refreshing one setting replaces its entry while leaving the other settings untouched.
         """
         GlobalConfig.objects.filter(pk=PAGINATION_KEY).update(value='42')
         changed_key = self.service.build_cache_key(key=PAGINATION_KEY)
-        other_key = self.service.build_cache_key(key='maintenance-enabled')
+        other_key = self.service.build_cache_key(key='platform.maintenance_enabled')
         service, backend = self.create_service(
             backend=FakeCacheBackend(
                 {
@@ -100,7 +102,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_cache_miss_refreshes_all_values_and_retries(self) -> None:
         """
-        При cache miss опубликовать снимок и повторить чтение ключа.
+        Verify that a lookup rebuilds the full snapshot on a miss, then returns the requested typed entry.
         """
         GlobalConfig.objects.filter(pk=PAGINATION_KEY).update(value='42')
         service, backend = self.create_service()
@@ -113,7 +115,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_missing_value_after_refresh_raises_custom_error(self) -> None:
         """
-        Вернуть доменную ошибку, если ключ отсутствует после полного refresh.
+        Expect GlobalConfigNotFoundError when a requested key is still missing after the refresh attempt.
         """
         service, _ = self.create_service()
 
@@ -122,34 +124,34 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_refresh_publishes_every_typed_key(self) -> None:
         """
-        Опубликовать типизированные значения и маркер готовности одним снимком.
+        Verify that the refresh writes all typed entries and the readiness marker in the same cache batch.
         """
         GlobalConfig.objects.filter(pk=PAGINATION_KEY).update(value='25')
-        GlobalConfig.objects.filter(pk='maintenance-enabled').update(value='True')
+        GlobalConfig.objects.filter(pk='platform.maintenance_enabled').update(value='True')
         service, backend = self.create_service()
 
         refreshed_count = service.refresh_cache()
 
         self.assertEqual(refreshed_count, GlobalConfig.objects.count())
-        self.assertEqual(backend.values['global-config:platform-pagination-size'].value, 25)
+        self.assertEqual(backend.values['global-config:platform.pagination_size'].value, 25)
         self.assertIs(backend.values['global-config:snapshot-ready'], True)
 
     def test_secure_value_stays_encrypted_in_cache(self) -> None:
         """
-        Не сохранять расшифрованное SECURE-значение в кэше.
+        Verify that an encrypted secure value remains ciphertext in the published snapshot.
         """
         GlobalConfig.objects.filter(pk=SECRET_KEY).update(value='encrypted-secret')
         service, backend = self.create_service()
 
         service.refresh_cache()
 
-        cached_value = backend.values['global-config:secret-token']
+        cached_value = backend.values['global-config:auth.secret_token']
         self.assertEqual(cached_value.value, 'encrypted-secret')
         self.assertEqual(cached_value.value_type, SettingType.SECURE)
 
     def test_secure_value_is_decrypted_only_on_read(self) -> None:
         """
-        Расшифровать SECURE-значение только при выдаче вызывающему коду.
+        Verify that a typed read returns plaintext while its cached entry retains the original token.
         """
         cache_key = self.service.build_cache_key(key=SECRET_KEY)
         encrypted_value = encrypt_text('plain-secret')
@@ -165,7 +167,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_legacy_plain_cache_value_forces_full_refresh(self) -> None:
         """
-        Считать устаревший нетипизированный формат cache miss.
+        Put an untyped value in the cache and verify that reading it triggers a full refresh.
         """
         key = self.service.build_cache_key(key=PAGINATION_KEY)
         GlobalConfig.objects.filter(pk=PAGINATION_KEY).update(value='42')
@@ -178,16 +180,16 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_nullable_none_is_a_valid_cached_result(self) -> None:
         """
-        Вернуть None для nullable-настройки через публичный cache-aside путь.
+        Verify that a typed entry containing None represents a valid cache hit for a nullable setting.
         """
-        GlobalConfig.objects.filter(pk='optional-note').update(value=None, nullable=True)
+        GlobalConfig.objects.filter(pk='platform.optional_note').update(value=None, nullable=True)
         service, _ = self.create_service()
 
-        self.assertIsNone(service.get_value(key='optional-note'))
+        self.assertIsNone(service.get_value(key='platform.optional_note'))
 
     def test_invalid_value_stops_full_refresh(self) -> None:
         """
-        Не публиковать частичный снимок при ошибке преобразования значения.
+        Verify that a stored value that fails parsing prevents a partial snapshot from being published.
         """
         GlobalConfig.objects.filter(pk=PAGINATION_KEY).update(value='not-an-integer')
         service, backend = self.create_service()
@@ -199,7 +201,8 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_waiting_reader_skips_database_refresh_after_snapshot_publish(self) -> None:
         """
-        Не читать БД повторно после публикации снимка другим владельцем lock.
+        Simulate another worker publishing while a reader waits and verify that the reader reuses the
+        snapshot.
         """
         key = self.service.build_cache_key(key=PAGINATION_KEY)
         lock = FakeLock()
@@ -216,7 +219,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_expired_owner_does_not_publish_snapshot(self) -> None:
         """
-        Запретить публикацию после потери владения refresh lock.
+        Simulate an expired lease and verify that the previous owner cannot publish the snapshot.
         """
         lock = FakeLock(lose_ownership_before_publish=True)
         backend = FakeCacheBackend(lock=lock)
@@ -230,7 +233,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_lock_timeout_does_not_publish_without_lock(self) -> None:
         """
-        Завершить refresh ошибкой при timeout и отсутствии готового снимка.
+        Expect a refresh timeout error when the wait expires without a usable snapshot or a lease.
         """
         lock = FakeLock(is_acquired=False)
         backend = FakeCacheBackend(lock=lock)
@@ -244,7 +247,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_lock_timeout_accepts_snapshot_published_by_owner(self) -> None:
         """
-        Принять готовый снимок после timeout ожидания владельца lock.
+        Verify that a timed-out caller can use the complete snapshot written by the lease owner.
         """
         key = self.service.build_cache_key(key=PAGINATION_KEY)
         lock = FakeLock(is_acquired=False)
@@ -260,7 +263,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_readiness_requires_marker_and_every_config_key(self) -> None:
         """
-        Считать снимок готовым только при наличии маркера и всех ключей.
+        Verify that a readiness marker is insufficient when an active setting is missing from the cache.
         """
         backend = FakeCacheBackend(self.complete_snapshot())
         service, _ = self.create_service(backend=backend)
@@ -274,7 +277,7 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_readiness_fails_without_snapshot_marker(self) -> None:
         """
-        Не считать набор значений готовым без маркера снимка.
+        Verify that the typed cache entries alone are insufficient to report a complete snapshot.
         """
         service, backend = self.create_service()
 
@@ -283,7 +286,8 @@ class GlobalConfigServiceTestCase(TestCase):
 
     def test_missing_database_key_stops_snapshot_publication(self) -> None:
         """
-        Остановить публикацию при повреждённом полном наборе ключей в БД.
+        Verify that a missing declared row raises the incomplete-snapshot error before any entries are
+        published.
         """
         table_name = GlobalConfig._meta.db_table
         with connection.cursor() as cursor:

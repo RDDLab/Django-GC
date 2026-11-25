@@ -17,7 +17,9 @@ else:
 @admin.register(GlobalConfigCategory)
 class GlobalConfigCategoryAdmin(_GlobalConfigCategoryAdmin):
     """
-    Показать числовые категории и их labels из project definitions.
+    List stored category IDs with codes and names resolved from the active definitions.
+
+    Use the code-owned metadata for display and search without storing duplicate labels in the database.
     """
 
     list_display = ['id', 'category_code', 'category_name']
@@ -25,22 +27,33 @@ class GlobalConfigCategoryAdmin(_GlobalConfigCategoryAdmin):
     ordering = ['id']
     readonly_fields = ['id', 'category_code', 'category_name']
     fieldsets = [
-        (_('Идентификатор'), {'classes': ['wide'], 'fields': ['id']}),
-        (_('Категория'), {'classes': ['wide'], 'fields': ['category_code', 'category_name']}),
+        (_('Identifier'), {'classes': ['wide'], 'fields': ['id']}),
+        (_('Category'), {'classes': ['wide'], 'fields': ['category_code', 'category_name']}),
     ]
 
-    @admin.display(description=_('Код'))
+    @admin.display(description=_('Code'))
     def category_code(self, obj: GlobalConfigCategory) -> str:
+        """
+        Display the category code resolved from the active definition.
+        """
         return obj.code
 
-    @admin.display(description=_('Название'))
+    @admin.display(description=_('Name'))
     def category_name(self, obj: GlobalConfigCategory) -> str:
+        """
+        Display the category name resolved from the active definition.
+        """
         return obj.name
 
     @override
     def get_search_results(
         self, request: HttpRequest, queryset: QuerySet[GlobalConfigCategory], search_term: str
     ) -> tuple[QuerySet[GlobalConfigCategory], bool]:
+        """
+        Match category IDs, codes and display names case-insensitively against the active definitions.
+
+        Apply the resulting IDs to the incoming queryset so existing admin filters still apply.
+        """
         normalized_term = search_term.casefold()
         category_ids = [
             item.id
@@ -59,13 +72,14 @@ class GlobalConfigCategoryAdmin(_GlobalConfigCategoryAdmin):
     @override
     def has_add_permission(self, request: HttpRequest) -> bool:
         """
-        Разрешить создание категорий только через definitions.
+        Disable creating categories in the admin. The initialization command creates the declared
+        categories.
         """
         return False
 
     @override
     def has_delete_permission(self, request: HttpRequest, obj: GlobalConfigCategory | None = None) -> bool:
         """
-        Запретить удаление системных категорий.
+        Disable deleting categories in the admin so the catalog stays consistent with the definitions.
         """
         return False

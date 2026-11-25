@@ -21,3 +21,5 @@ Publish uses `cache.set_many`. On Redis/Valkey this is typically one `MSET`. Loc
 After one `GlobalConfig` row is saved and its transaction commits, Django-GC acquires the shared refresh lock, reads that row, and replaces only its typed cache entry. Other entries are not read or changed. Full snapshot publication remains the recovery and reconciliation mechanism for cache misses, initialization, and the optional periodic task.
 
 `is_cache_ready()` checks the marker and every declared key as a DTO, without reading the database.
+
+See the [operations guide](./operations.md#share-and-verify-the-snapshot) for startup and recovery checks.

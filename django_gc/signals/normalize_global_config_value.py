@@ -12,7 +12,10 @@ from django_gc.models import GlobalConfig
 @receiver(signal=pre_save, sender=GlobalConfig, dispatch_uid='django_gc.normalize_value')
 def normalize_global_config_value(sender: type[GlobalConfig], instance: GlobalConfig, raw: bool, **kwargs: Any) -> None:
     """
-    Нормализовать изменённое значение перед сохранением без повторного шифрования.
+    Normalize values before saving a GlobalConfig row.
+
+    Skip raw fixture saves and None values. Encrypt secure values only when the stored representation
+    changes, and convert date and time objects to the supported storage formats.
     """
     if raw or instance.value is None:
         return

@@ -11,7 +11,7 @@ from django_gc.signals.refresh_global_configs_cache import refresh_global_config
 
 class GlobalConfigSignalsTestCase(TestCase):
     """
-    Проверить регистрацию точечного refresh после изменения GlobalConfig.
+    Verify how saves and explicit initialization schedule cache work after a database commit.
     """
 
     def setUp(self) -> None:
@@ -25,9 +25,9 @@ class GlobalConfigSignalsTestCase(TestCase):
 
     def test_save_schedules_changed_value_refresh_after_commit(self) -> None:
         """
-        Запланировать callback только после успешной фиксации изменения.
+        Save a setting and verify that the post-commit callback refreshes only the changed key.
         """
-        config = GlobalConfig.objects.get(pk='platform-pagination-size')
+        config = GlobalConfig.objects.get(pk='platform.pagination_size')
         config.value = '25'
         with self.captureOnCommitCallbacks() as callbacks:
             config.save(update_fields=['value', 'updated_at'])
@@ -40,9 +40,9 @@ class GlobalConfigSignalsTestCase(TestCase):
 
     def test_fixture_load_does_not_refresh_cache(self) -> None:
         """
-        Не запускать побочные эффекты при загрузке raw fixture.
+        Verify that a raw fixture save schedules no cache refresh callback.
         """
-        config = GlobalConfig.objects.get(pk='platform-pagination-size')
+        config = GlobalConfig.objects.get(pk='platform.pagination_size')
         with self.captureOnCommitCallbacks() as callbacks:
             refresh_global_configs_cache(sender=GlobalConfig, instance=config, using='default', raw=True)
 
@@ -50,7 +50,7 @@ class GlobalConfigSignalsTestCase(TestCase):
 
     def test_initialization_schedules_safe_refresh_after_commit(self) -> None:
         """
-        Не завершать post-migrate ошибкой после уже зафиксированной БД.
+        Verify that explicit initialization schedules the safe full refresh after commit.
         """
         with self.captureOnCommitCallbacks() as callbacks:
             GlobalConfigInitializationService().initialize()
@@ -59,7 +59,7 @@ class GlobalConfigSignalsTestCase(TestCase):
 
     def test_safe_refresh_does_not_propagate_cache_failure(self) -> None:
         """
-        Залогировать отказ backend после commit без повторной ошибки операции.
+        Simulate a failed post-commit cache refresh and verify that the exception is logged and contained.
         """
 
         class BrokenCache:

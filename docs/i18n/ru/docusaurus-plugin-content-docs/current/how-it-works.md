@@ -44,7 +44,7 @@ flowchart TD
 
 - синхронный cache miss
 - точечный refresh сохранённого ключа после `post_save` через `transaction.on_commit()`
-- `post_migrate` после инициализации
+- `initialize_global_configs` после commit
 - необязательная Celery-задача `django_gc.refresh_global_configs_cache`
 
 Инициализация подавляет per-row refresh и планирует один полный refresh после commit.

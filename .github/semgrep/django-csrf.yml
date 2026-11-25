@@ -1,0 +1,21 @@
+rules:
+  - id: django-form-missing-csrf-token
+    languages: [generic]
+    paths:
+      include: ["**/*.html"]
+    severity: ERROR
+    message: Add a Django CSRF token to this state-changing form.
+    # Treat quoted attributes and comments as units, including comments that contain a token.
+    pattern-regex: |-
+      (?isx)
+      <form\b
+      (?=(?:"[^"]*"|'[^']*'|[^'">])*\s+method\s*=\s*
+        (?:"(?:post|put|patch|delete)"|'(?:post|put|patch|delete)'|(?:post|put|patch|delete)(?=[\s>])))
+      (?:"[^"]*"|'[^']*'|[^'">])*>
+      (?:
+        \{\#.*?\#\}
+        | \{%\s*comment\b.*?%\}.*?\{%\s*endcomment\s*%\}
+        | <!--.*?-->
+        | (?!</?form\b|\{%\s*csrf_token\s*%\}|\{\#|\{%\s*comment\b|<!--).
+      )*
+      </form\s*>

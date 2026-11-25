@@ -1,0 +1,313 @@
+# Django-GC messages. Distributed under the same license as Django-GC.
+msgid ""
+msgstr ""
+"Project-Id-Version: Django-GC 1.1.5\n"
+"PO-Revision-Date: 2026-11-26 00:00+0300\n"
+"Last-Translator: RDDLab\n"
+"Language-Team: Russian\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: admins/global_config.py:48
+msgid "General information"
+msgstr "Общая информация"
+
+#: admins/global_config.py:51
+msgid "Options"
+msgstr "Параметры"
+
+#: admins/global_config.py:52 admins/global_config.py:56
+#: forms/global_configs.py:31 forms/global_configs.py:128
+#: models/global_config.py:20
+msgid "Value"
+msgstr "Значение"
+
+#: admins/global_config.py:53
+msgid "Dates"
+msgstr "Даты"
+
+#: admins/global_config.py:71 forms/global_configs.py:49
+msgid "Enabled"
+msgstr "Включено"
+
+#: admins/global_config.py:71 forms/global_configs.py:49
+msgid "Disabled"
+msgstr "Выключено"
+
+#: admins/global_config.py:78 forms/global_configs.py:33
+#: models/global_config.py:25
+#: templates/admin/django_gc/configuration_metadata.html:9
+msgid "Description"
+msgstr "Описание"
+
+#: admins/global_config_category.py:30
+msgid "Identifier"
+msgstr "Идентификатор"
+
+#: admins/global_config_category.py:31 models/global_config.py:22
+msgid "Category"
+msgstr "Категория"
+
+#: admins/global_config_category.py:34
+msgid "Code"
+msgstr "Код"
+
+#: admins/global_config_category.py:41
+msgid "Name"
+msgstr "Название"
+
+#: apps.py:14
+msgid "Settings management"
+msgstr "Управление настройками"
+
+#: enums/setting_types.py:48
+msgid "String"
+msgstr "Строка"
+
+#: enums/setting_types.py:49
+msgid "Boolean"
+msgstr "Логическое значение"
+
+#: enums/setting_types.py:50
+msgid "Float"
+msgstr "Число с плавающей точкой"
+
+#: enums/setting_types.py:51
+msgid "Decimal"
+msgstr "Десятичное число"
+
+#: enums/setting_types.py:52
+msgid "Integer"
+msgstr "Целое число"
+
+#: enums/setting_types.py:53
+msgid "Secure"
+msgstr "Защищённое значение"
+
+#: enums/setting_types.py:54
+msgid "Date"
+msgstr "Дата"
+
+#: enums/setting_types.py:55
+msgid "Time"
+msgstr "Время"
+
+#: enums/setting_types.py:56
+msgid "Date and time"
+msgstr "Дата и время"
+
+#: enums/setting_types.py:57
+msgid "String Array"
+msgstr "Список строк"
+
+#: enums/setting_types.py:58
+msgid "Integer Array"
+msgstr "Список целых чисел"
+
+#: enums/setting_types.py:59
+msgid "Float Array"
+msgstr "Список чисел с плавающей точкой"
+
+#: enums/setting_types.py:60
+msgid "Decimal Array"
+msgstr "Список десятичных чисел"
+
+#: enums/setting_types.py:61
+msgid "Color"
+msgstr "Цвет"
+
+#: enums/setting_types.py:62
+msgid "String Choices"
+msgstr "Выбор строки"
+
+#: enums/setting_types.py:63
+msgid "Integer Choices"
+msgstr "Выбор целого числа"
+
+#: enums/setting_types.py:64
+msgid "Float Choices"
+msgstr "Выбор числа с плавающей точкой"
+
+#: enums/setting_types.py:65
+msgid "Decimal Choices"
+msgstr "Выбор десятичного числа"
+
+#: enums/setting_types.py:66
+msgid "JSON"
+msgstr "JSON"
+
+#: enums/setting_types.py:67
+msgid "Integer Multiple Choices"
+msgstr "Выбор нескольких целых чисел"
+
+#: enums/setting_types.py:68
+msgid "String Multiple Choices"
+msgstr "Выбор нескольких строк"
+
+#: enums/setting_types.py:69
+msgid "Float Multiple Choices"
+msgstr "Выбор нескольких чисел с плавающей точкой"
+
+#: enums/setting_types.py:70
+msgid "UUID"
+msgstr "UUID"
+
+#: exceptions.py:21
+#, python-format
+msgid "GlobalConfig setting %(key)s was not found."
+msgstr "Настройка GlobalConfig %(key)s не найдена."
+
+#: exceptions.py:34
+#, python-format
+msgid "GlobalConfig setting %(key)s has an invalid value."
+msgstr "Настройка GlobalConfig %(key)s содержит недопустимое значение."
+
+#: exceptions.py:36
+#, python-format
+msgid "GlobalConfig setting %(key)s has an invalid value for type %(value_type)s."
+msgstr "Настройка GlobalConfig %(key)s содержит недопустимое значение для типа %(value_type)s."
+
+#: exceptions.py:61
+#, python-format
+msgid "Cannot build the GlobalConfig snapshot. Missing settings: %(keys)s."
+msgstr "Невозможно сформировать снимок GlobalConfig. Отсутствуют настройки: %(keys)s."
+
+#: exceptions.py:72
+msgid "Timed out waiting for the GlobalConfig cache refresh lock."
+msgstr "Истекло время ожидания блокировки обновления кэша GlobalConfig."
+
+#: fields.py:15 fields.py:24
+msgid "Enter values separated by \";\"."
+msgstr "Разделяйте значения точкой с запятой."
+
+#: forms/global_configs.py:28 models/global_config.py:19
+#: templates/admin/django_gc/configuration_metadata.html:3
+msgid "Key"
+msgstr "Ключ"
+
+#: forms/global_configs.py:30
+msgid "Type"
+msgstr "Тип"
+
+#: forms/global_configs.py:140
+msgid "This setting requires a value."
+msgstr "Для этой настройки необходимо указать значение."
+
+#: forms/global_configs.py:185
+msgid "Enter a valid value."
+msgstr "Введите допустимое значение."
+
+#: forms/global_configs.py:199
+msgid "Correct the form errors first."
+msgstr "Сначала исправьте ошибки формы."
+
+#: management/commands/initialize_global_configs.py:20
+msgid "Initialize project and provider settings while preserving existing values."
+msgstr "Инициализировать настройки проекта и подключённых библиотек с сохранением существующих значений."
+
+#: management/commands/initialize_global_configs.py:44
+msgid "GlobalConfig tables are missing. Run python manage.py migrate --skip-checks first."
+msgstr "Таблицы GlobalConfig отсутствуют. Сначала выполните python manage.py migrate --skip-checks."
+
+#: management/commands/initialize_global_configs.py:46
+msgid "GlobalConfig settings initialized. Existing values were preserved."
+msgstr "Настройки GlobalConfig инициализированы. Существующие значения сохранены."
+
+#: models/global_config.py:24
+msgid "Value type"
+msgstr "Тип значения"
+
+#: models/global_config.py:26
+msgid "Read-only"
+msgstr "Только для чтения"
+
+#: models/global_config.py:27
+msgid "Allow empty values"
+msgstr "Допускает пустое значение"
+
+#: models/global_config.py:28
+msgid "Allowed choices"
+msgstr "Возможные значения"
+
+#: models/global_config.py:31
+msgid "During initialization, replace the options for choice settings with the declared options."
+msgstr "При инициализации заменяет варианты выбора на указанные в определении настройки."
+
+#: models/global_config.py:32
+msgid "Always update choices"
+msgstr "Всегда обновлять варианты выбора"
+
+#: models/global_config.py:34
+msgid "Created at"
+msgstr "Дата создания"
+
+#: models/global_config.py:35
+msgid "Updated at"
+msgstr "Дата изменения"
+
+#: models/global_config.py:66
+#, python-format
+msgid "GlobalConfig setting %(key)s must be created by initializing its definition."
+msgstr "Настройку GlobalConfig %(key)s необходимо создать через инициализацию её определения."
+
+#: models/global_config.py:71
+#, python-format
+msgid "GlobalConfig setting %(key)s cannot be created or renamed manually."
+msgstr "Настройку GlobalConfig %(key)s нельзя создать или переименовать вручную."
+
+#: models/global_config.py:78
+msgid "This setting is read-only."
+msgstr "Эта настройка доступна только для чтения."
+
+#: models/global_config.py:89
+msgid "Global setting"
+msgstr "Глобальная настройка"
+
+#: models/global_config.py:90
+msgid "Global settings"
+msgstr "Глобальные настройки"
+
+#: models/global_config_category.py:14
+msgid "ID"
+msgstr "ID"
+
+#: models/global_config_category.py:37
+msgid "Global settings category"
+msgstr "Категория глобальных настроек"
+
+#: models/global_config_category.py:38
+msgid "Global settings categories"
+msgstr "Категории глобальных настроек"
+
+#: registry.py:89 services/global_config_initialization_service.py:89
+#, python-format
+msgid "GlobalConfig category id=%(category_id)s is not declared."
+msgstr "Категория GlobalConfig с id=%(category_id)s не объявлена."
+
+#: registry.py:151
+msgid "Confirm the change in the settings provider's editor."
+msgstr "Подтвердите изменение в редакторе библиотеки-владельца настройки."
+
+#: signals/prevent_global_config_deletion.py:19
+#, python-format
+msgid "GlobalConfig setting %(key)s cannot be deleted."
+msgstr "Настройку GlobalConfig %(key)s нельзя удалить."
+
+#: templates/admin/django_gc/configuration_metadata.html:5
+msgid "Data type"
+msgstr "Тип данных"
+
+#: templates/admin/django_gc/configuration_metadata.html:7
+msgid "Editing"
+msgstr "Изменение"
+
+#: templates/admin/django_gc/configuration_metadata.html:8
+msgid "Allowed"
+msgstr "Разрешено"
+
+#: templates/admin/django_gc/configuration_metadata.html:8
+msgid "View only"
+msgstr "Только просмотр"

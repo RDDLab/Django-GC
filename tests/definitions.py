@@ -8,28 +8,28 @@ TEST_CATEGORIES = [
 
 TEST_DEFINITIONS = [
     SettingDefinition(
-        key='platform-pagination-size',
+        key='platform.pagination_size',
         description='Default pagination size',
         default_value=25,
         value_type=SettingType.INTEGER,
         category_id=1,
     ),
     SettingDefinition(
-        key='maintenance-enabled',
+        key='platform.maintenance_enabled',
         description='Maintenance mode',
         default_value=False,
         value_type=SettingType.BOOLEAN,
         category_id=1,
     ),
     SettingDefinition(
-        key='secret-token',
+        key='auth.secret_token',
         description='Secure token',
         default_value='secret',
         value_type=SettingType.SECURE,
         category_id=2,
     ),
     SettingDefinition(
-        key='optional-note',
+        key='platform.optional_note',
         description='Optional note',
         default_value=None,
         value_type=SettingType.STRING,
@@ -37,7 +37,7 @@ TEST_DEFINITIONS = [
         nullable=True,
     ),
     SettingDefinition(
-        key='read-only-flag',
+        key='platform.read_only_flag',
         description='Read-only flag',
         default_value=True,
         value_type=SettingType.BOOLEAN,
@@ -45,7 +45,7 @@ TEST_DEFINITIONS = [
         is_read_only=True,
     ),
     SettingDefinition(
-        key='theme-choice',
+        key='platform.theme',
         description='Theme',
         default_value='dark',
         value_type=SettingType.STRING_CHOICES,

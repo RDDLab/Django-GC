@@ -13,25 +13,35 @@ from django_gc import (
     SettingType,
     get_value,
     set_value,
+    set_typed_value,
     refresh_cache,
     is_cache_ready,
 )
 ```
 
+Импортировать публичные функции можно до инициализации Django. Вызывайте их после загрузки приложений.
+
 ## Функции
 
 | Функция | Возвращает | Заметки |
 |---|---|---|
-| `get_value(key)` | типизированное значение | `str` или `StrEnum`; может обновить снимок |
+| `get_value(key, *, use_cache=True)` | типизированное значение | принимает ключ `str` или `StrEnum`, может обновить снимок. `use_cache=False` читает базу |
 | `set_value(key, value)` | `GlobalConfig` | только существующие ключи; после commit обновляет этот cache entry |
+| `set_typed_value(*, key, value)` | `GlobalConfig` | добавлена в 1.1.5. Проверяет и сериализует типизированное значение объявленного ключа |
 | `refresh_cache()` | `int` | число опубликованных ключей или `0`, если снимок уже опубликовал другой владелец |
 | `is_cache_ready()` | `bool` | маркер + каждый объявленный DTO, без базы |
+
+## Чтение и блокировка нескольких ключей
+
+<Since v="1.1.5" />
+
+`GlobalConfigService().get_values(keys=keys, use_cache=False)` читает ключи из базы одним запросом и возвращает типизированные значения по ключам. Если ключ отсутствует, сервис выбрасывает `GlobalConfigNotFoundError`. Вызывайте `GlobalConfigService().lock_values(keys=keys)` внутри транзакции до расчёта связанных изменений. См. [пример транзакции](./operations.md).
 
 ## Definitions
 
 `CategoryDefinition(id, code, name)`
 
-`SettingDefinition(key, description, default_value, value_type, category_id, nullable=False, is_read_only=False, variables=None, is_always_update=False)`
+`SettingDefinition(key, description, default_value, value_type, category_id, nullable=False, is_read_only=False, variables=None, is_always_update=False, previous_keys=[])`
 
 ## Исключения
 
@@ -101,7 +111,7 @@ from django_gc import (
 ### `GlobalConfigCreationForbiddenError`
 
 `GlobalConfig.save()` для новой строки. Ключи создаются только из
-проектных definitions на `post_migrate`, не из Admin, `save()` или
+проектных definitions командой `initialize_global_configs`, не из Admin, `save()` или
 `set_value()`.
 
 ### `GlobalConfigDeletionForbiddenError`
@@ -117,3 +127,14 @@ from django_gc import (
 повторно не поднимается.
 
 Внутренние классы (`GlobalConfigService`, cache DTO, lock) не входят в стабильный import surface. Предпочитайте функции уровня модуля.
+
+
+## initialize_global_configs
+
+<Since v="1.1.5" />
+
+```shell
+python manage.py initialize_global_configs
+```
+
+Явно синхронизирует определения проекта и провайдеров после создания схемы GC. Создаёт отсутствующие категории/ключи и сохраняет рабочие значения; обновляются только кодовые метаданные. Повторный запуск безопасен. Зависимые system checks не выполняются только внутри этой команды; обычный check и запуск сервера продолжают проверять конфигурацию. Обработчиков post_migrate для создания данных GC нет. При отсутствии таблиц команда сообщает, что сначала нужно применить миграции схемы.

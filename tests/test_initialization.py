@@ -9,12 +9,14 @@ from tests.definitions import TEST_CATEGORIES, TEST_DEFINITIONS
 
 class GlobalConfigInitializationTestCase(TestCase):
     """
-    Проверить синхронизацию definitions без перезаписи рабочих значений.
+    Verify explicit synchronization against existing database rows.
+
+    Cover creation, metadata reconciliation and preservation of settings that have already been edited.
     """
 
     def test_initialize_creates_numeric_categories_and_declared_keys(self) -> None:
         """
-        Создать числовые строки категорий и связанные ключи.
+        Initialize the catalog and verify that each declared key points to its numeric category row.
         """
         self.assertEqual(GlobalConfigCategory.objects.count(), len(TEST_CATEGORIES))
         self.assertSetEqual(set(GlobalConfigCategory.objects.values_list('id', flat=True)), {1, 2})
@@ -22,7 +24,7 @@ class GlobalConfigInitializationTestCase(TestCase):
 
     def test_category_table_does_not_duplicate_definition_metadata(self) -> None:
         """
-        Хранить в таблице категории только числовой идентификатор.
+        Verify that category codes and names remain code-owned and the database stores only the primary key.
         """
         field_names = {field.name for field in GlobalConfigCategory._meta.local_fields}
         self.assertSetEqual(field_names, {'id'})
@@ -32,9 +34,9 @@ class GlobalConfigInitializationTestCase(TestCase):
 
     def test_initialize_preserves_live_value(self) -> None:
         """
-        Не перезаписывать уже изменённое рабочее значение.
+        Modify a setting, run initialization again and check that the modified value remains in place.
         """
-        config = GlobalConfig.objects.get(pk='platform-pagination-size')
+        config = GlobalConfig.objects.get(pk='platform.pagination_size')
         config.value = '99'
         config.save(update_fields=['value', 'updated_at'])
 
@@ -45,12 +47,13 @@ class GlobalConfigInitializationTestCase(TestCase):
 
     def test_initialize_updates_metadata_only(self) -> None:
         """
-        Обновить description без смены value.
+        Change a setting's declared description and check that initialization updates it without resetting
+        the value.
         """
         updated_definitions = [
             SettingDefinition(
                 key=item.key,
-                description='Updated description' if str(item.key) == 'platform-pagination-size' else item.description,
+                description='Updated description' if str(item.key) == 'platform.pagination_size' else item.description,
                 default_value=item.default_value,
                 value_type=item.value_type,
                 category_id=item.category_id,
@@ -64,13 +67,13 @@ class GlobalConfigInitializationTestCase(TestCase):
         with override_settings(GLOBAL_CONFIG_DEFINITIONS=updated_definitions):
             GlobalConfigInitializationService().initialize()
 
-        config = GlobalConfig.objects.get(pk='platform-pagination-size')
+        config = GlobalConfig.objects.get(pk='platform.pagination_size')
         self.assertEqual(config.description, 'Updated description')
         self.assertEqual(config.value, '25')
 
     def test_initialize_does_not_schedule_per_row_refresh(self) -> None:
         """
-        Подавить post_save refresh во время синхронизации метаданных.
+        Verify that synchronization suppresses per-row cache callbacks in favor of one full refresh.
         """
         updated_definitions = [
             SettingDefinition(
@@ -97,7 +100,7 @@ class GlobalConfigInitializationTestCase(TestCase):
 
     def test_always_update_replaces_choice_variables(self) -> None:
         """
-        Обновить choices только при is_always_update.
+        Verify that synchronization replaces the declared choice options when is_always_update is enabled.
         """
         updated_definitions = [
             SettingDefinition(
@@ -110,7 +113,7 @@ class GlobalConfigInitializationTestCase(TestCase):
                 is_read_only=item.is_read_only,
                 variables=(
                     {'Dark': 'dark', 'Light': 'light', 'System': 'system'}
-                    if str(item.key) == 'theme-choice'
+                    if str(item.key) == 'platform.theme'
                     else item.variables
                 ),
                 is_always_update=item.is_always_update,
@@ -120,15 +123,15 @@ class GlobalConfigInitializationTestCase(TestCase):
         with override_settings(GLOBAL_CONFIG_DEFINITIONS=updated_definitions):
             GlobalConfigInitializationService().initialize()
 
-        config = GlobalConfig.objects.get(pk='theme-choice')
+        config = GlobalConfig.objects.get(pk='platform.theme')
         self.assertEqual(config.variables, {'Dark': 'dark', 'Light': 'light', 'System': 'system'})
 
     def test_initialize_rejects_unknown_numeric_category(self) -> None:
         """
-        Не создавать ключ с отсутствующей в definitions категорией.
+        Expect initialization to reject a setting whose numeric category ID has no active definition.
         """
         definition = SettingDefinition(
-            key='reports-enabled',
+            key='platform.reports_enabled',
             description='Reports',
             default_value=False,
             value_type=TEST_DEFINITIONS[0].value_type,
@@ -139,7 +142,7 @@ class GlobalConfigInitializationTestCase(TestCase):
 
     def test_new_numeric_category_is_created_from_definitions(self) -> None:
         """
-        Добавить новую строку категории, не сохраняя code и name.
+        Add a category definition and verify that initialization creates its numeric row.
         """
         extra_categories = [*TEST_CATEGORIES, CategoryDefinition(id=9, code='reports', name='Reports')]
         with override_settings(GLOBAL_CONFIG_CATEGORIES=extra_categories):

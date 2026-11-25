@@ -1,0 +1,313 @@
+# Django-GC messages. Distributed under the same license as Django-GC.
+msgid ""
+msgstr ""
+"Project-Id-Version: Django-GC 1.1.5\n"
+"PO-Revision-Date: 2026-11-26 00:00+0300\n"
+"Last-Translator: RDDLab\n"
+"Language-Team: English\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: admins/global_config.py:48
+msgid "General information"
+msgstr "General information"
+
+#: admins/global_config.py:51
+msgid "Options"
+msgstr "Options"
+
+#: admins/global_config.py:52 admins/global_config.py:56
+#: forms/global_configs.py:31 forms/global_configs.py:128
+#: models/global_config.py:20
+msgid "Value"
+msgstr "Value"
+
+#: admins/global_config.py:53
+msgid "Dates"
+msgstr "Dates"
+
+#: admins/global_config.py:71 forms/global_configs.py:49
+msgid "Enabled"
+msgstr "Enabled"
+
+#: admins/global_config.py:71 forms/global_configs.py:49
+msgid "Disabled"
+msgstr "Disabled"
+
+#: admins/global_config.py:78 forms/global_configs.py:33
+#: models/global_config.py:25
+#: templates/admin/django_gc/configuration_metadata.html:9
+msgid "Description"
+msgstr "Description"
+
+#: admins/global_config_category.py:30
+msgid "Identifier"
+msgstr "Identifier"
+
+#: admins/global_config_category.py:31 models/global_config.py:22
+msgid "Category"
+msgstr "Category"
+
+#: admins/global_config_category.py:34
+msgid "Code"
+msgstr "Code"
+
+#: admins/global_config_category.py:41
+msgid "Name"
+msgstr "Name"
+
+#: apps.py:14
+msgid "Settings management"
+msgstr "Settings management"
+
+#: enums/setting_types.py:48
+msgid "String"
+msgstr "String"
+
+#: enums/setting_types.py:49
+msgid "Boolean"
+msgstr "Boolean"
+
+#: enums/setting_types.py:50
+msgid "Float"
+msgstr "Float"
+
+#: enums/setting_types.py:51
+msgid "Decimal"
+msgstr "Decimal"
+
+#: enums/setting_types.py:52
+msgid "Integer"
+msgstr "Integer"
+
+#: enums/setting_types.py:53
+msgid "Secure"
+msgstr "Secure"
+
+#: enums/setting_types.py:54
+msgid "Date"
+msgstr "Date"
+
+#: enums/setting_types.py:55
+msgid "Time"
+msgstr "Time"
+
+#: enums/setting_types.py:56
+msgid "Date and time"
+msgstr "Date and time"
+
+#: enums/setting_types.py:57
+msgid "String Array"
+msgstr "String Array"
+
+#: enums/setting_types.py:58
+msgid "Integer Array"
+msgstr "Integer Array"
+
+#: enums/setting_types.py:59
+msgid "Float Array"
+msgstr "Float Array"
+
+#: enums/setting_types.py:60
+msgid "Decimal Array"
+msgstr "Decimal Array"
+
+#: enums/setting_types.py:61
+msgid "Color"
+msgstr "Color"
+
+#: enums/setting_types.py:62
+msgid "String Choices"
+msgstr "String Choices"
+
+#: enums/setting_types.py:63
+msgid "Integer Choices"
+msgstr "Integer Choices"
+
+#: enums/setting_types.py:64
+msgid "Float Choices"
+msgstr "Float Choices"
+
+#: enums/setting_types.py:65
+msgid "Decimal Choices"
+msgstr "Decimal Choices"
+
+#: enums/setting_types.py:66
+msgid "JSON"
+msgstr "JSON"
+
+#: enums/setting_types.py:67
+msgid "Integer Multiple Choices"
+msgstr "Integer Multiple Choices"
+
+#: enums/setting_types.py:68
+msgid "String Multiple Choices"
+msgstr "String Multiple Choices"
+
+#: enums/setting_types.py:69
+msgid "Float Multiple Choices"
+msgstr "Float Multiple Choices"
+
+#: enums/setting_types.py:70
+msgid "UUID"
+msgstr "UUID"
+
+#: exceptions.py:21
+#, python-format
+msgid "GlobalConfig setting %(key)s was not found."
+msgstr "GlobalConfig setting %(key)s was not found."
+
+#: exceptions.py:34
+#, python-format
+msgid "GlobalConfig setting %(key)s has an invalid value."
+msgstr "GlobalConfig setting %(key)s has an invalid value."
+
+#: exceptions.py:36
+#, python-format
+msgid "GlobalConfig setting %(key)s has an invalid value for type %(value_type)s."
+msgstr "GlobalConfig setting %(key)s has an invalid value for type %(value_type)s."
+
+#: exceptions.py:61
+#, python-format
+msgid "Cannot build the GlobalConfig snapshot. Missing settings: %(keys)s."
+msgstr "Cannot build the GlobalConfig snapshot. Missing settings: %(keys)s."
+
+#: exceptions.py:72
+msgid "Timed out waiting for the GlobalConfig cache refresh lock."
+msgstr "Timed out waiting for the GlobalConfig cache refresh lock."
+
+#: fields.py:15 fields.py:24
+msgid "Enter values separated by \";\"."
+msgstr "Enter values separated by \";\"."
+
+#: forms/global_configs.py:28 models/global_config.py:19
+#: templates/admin/django_gc/configuration_metadata.html:3
+msgid "Key"
+msgstr "Key"
+
+#: forms/global_configs.py:30
+msgid "Type"
+msgstr "Type"
+
+#: forms/global_configs.py:140
+msgid "This setting requires a value."
+msgstr "This setting requires a value."
+
+#: forms/global_configs.py:185
+msgid "Enter a valid value."
+msgstr "Enter a valid value."
+
+#: forms/global_configs.py:199
+msgid "Correct the form errors first."
+msgstr "Correct the form errors first."
+
+#: management/commands/initialize_global_configs.py:20
+msgid "Initialize project and provider settings while preserving existing values."
+msgstr "Initialize project and provider settings while preserving existing values."
+
+#: management/commands/initialize_global_configs.py:44
+msgid "GlobalConfig tables are missing. Run python manage.py migrate --skip-checks first."
+msgstr "GlobalConfig tables are missing. Run python manage.py migrate --skip-checks first."
+
+#: management/commands/initialize_global_configs.py:46
+msgid "GlobalConfig settings initialized. Existing values were preserved."
+msgstr "GlobalConfig settings initialized. Existing values were preserved."
+
+#: models/global_config.py:24
+msgid "Value type"
+msgstr "Value type"
+
+#: models/global_config.py:26
+msgid "Read-only"
+msgstr "Read-only"
+
+#: models/global_config.py:27
+msgid "Allow empty values"
+msgstr "Allow empty values"
+
+#: models/global_config.py:28
+msgid "Allowed choices"
+msgstr "Allowed choices"
+
+#: models/global_config.py:31
+msgid "During initialization, replace the options for choice settings with the declared options."
+msgstr "During initialization, replace the options for choice settings with the declared options."
+
+#: models/global_config.py:32
+msgid "Always update choices"
+msgstr "Always update choices"
+
+#: models/global_config.py:34
+msgid "Created at"
+msgstr "Created at"
+
+#: models/global_config.py:35
+msgid "Updated at"
+msgstr "Updated at"
+
+#: models/global_config.py:66
+#, python-format
+msgid "GlobalConfig setting %(key)s must be created by initializing its definition."
+msgstr "GlobalConfig setting %(key)s must be created by initializing its definition."
+
+#: models/global_config.py:71
+#, python-format
+msgid "GlobalConfig setting %(key)s cannot be created or renamed manually."
+msgstr "GlobalConfig setting %(key)s cannot be created or renamed manually."
+
+#: models/global_config.py:78
+msgid "This setting is read-only."
+msgstr "This setting is read-only."
+
+#: models/global_config.py:89
+msgid "Global setting"
+msgstr "Global setting"
+
+#: models/global_config.py:90
+msgid "Global settings"
+msgstr "Global settings"
+
+#: models/global_config_category.py:14
+msgid "ID"
+msgstr "ID"
+
+#: models/global_config_category.py:37
+msgid "Global settings category"
+msgstr "Global settings category"
+
+#: models/global_config_category.py:38
+msgid "Global settings categories"
+msgstr "Global settings categories"
+
+#: registry.py:89 services/global_config_initialization_service.py:89
+#, python-format
+msgid "GlobalConfig category id=%(category_id)s is not declared."
+msgstr "GlobalConfig category id=%(category_id)s is not declared."
+
+#: registry.py:151
+msgid "Confirm the change in the settings provider's editor."
+msgstr "Confirm the change in the settings provider's editor."
+
+#: signals/prevent_global_config_deletion.py:19
+#, python-format
+msgid "GlobalConfig setting %(key)s cannot be deleted."
+msgstr "GlobalConfig setting %(key)s cannot be deleted."
+
+#: templates/admin/django_gc/configuration_metadata.html:5
+msgid "Data type"
+msgstr "Data type"
+
+#: templates/admin/django_gc/configuration_metadata.html:7
+msgid "Editing"
+msgstr "Editing"
+
+#: templates/admin/django_gc/configuration_metadata.html:8
+msgid "Allowed"
+msgstr "Allowed"
+
+#: templates/admin/django_gc/configuration_metadata.html:8
+msgid "View only"
+msgstr "View only"

@@ -47,7 +47,7 @@ const config: Config = {
   baseUrl: '/',
   trailingSlash: true,
   organizationName: 'RDDLab',
-  projectName: 'Django-GC',
+  projectName: 'Django-GlobalConfig',
 
   headTags: [
     {
@@ -98,7 +98,7 @@ const config: Config = {
         docs: {
           path: 'content',
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/RDDLab/Django-GC/tree/main/docs/',
+          editUrl: 'https://github.com/RDDLab/Django-GlobalConfig/tree/main/docs/',
           editLocalizedFiles: true,
         },
         blog: false,
@@ -106,7 +106,7 @@ const config: Config = {
           customCss: './src/css/custom.css',
         },
         sitemap: {
-          lastmod: 'date',
+          lastmod: process.env.DOCS_WITHOUT_GIT === '1' ? null : 'date',
           changefreq: 'weekly',
           filename: 'sitemap.xml',
         },
@@ -204,7 +204,7 @@ const config: Config = {
           position: 'right',
         },
         {
-          href: 'https://github.com/RDDLab/Django-GC',
+          href: 'https://github.com/RDDLab/Django-GlobalConfig',
           label: 'GitHub',
           position: 'right',
         },
@@ -234,11 +234,11 @@ const config: Config = {
         {
           title: 'Project',
           items: [
-            {label: 'GitHub', href: 'https://github.com/RDDLab/Django-GC'},
+            {label: 'GitHub', href: 'https://github.com/RDDLab/Django-GlobalConfig'},
             {label: 'PyPI', href: 'https://pypi.org/project/django-gc/'},
             {
               label: 'Changelog',
-              href: 'https://github.com/RDDLab/Django-GC/blob/main/CHANGELOG.md',
+              href: 'https://github.com/RDDLab/Django-GlobalConfig/blob/main/CHANGELOG.md',
             },
           ],
         },

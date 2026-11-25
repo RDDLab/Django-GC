@@ -1,0 +1,11 @@
+{% load i18n %}
+<dl class="gc-configuration-metadata">
+  <dt>{% translate 'Key' %}</dt>
+  <dd><code>{{ configuration_record.key }}</code></dd>
+  <dt>{% translate 'Data type' %}</dt>
+  <dd>{{ configuration_record.get_value_type_display }}</dd>
+  <dt>{% translate 'Editing' %}</dt>
+  <dd>{% if configuration_can_change %}{% translate 'Allowed' %}{% else %}{% translate 'View only' %}{% endif %}</dd>
+  <dt>{% translate 'Description' %}</dt>
+  <dd>{% translate configuration_record.description %}</dd>
+</dl>

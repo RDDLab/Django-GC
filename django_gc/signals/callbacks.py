@@ -8,7 +8,9 @@ logger = logging.getLogger(__name__)
 
 def refresh_global_config_value_safely(changed_key: str | StrEnum) -> None:
     """
-    Обновить изменённый ключ после commit, не маскируя сохранённое изменение.
+    Refresh the changed setting after the database transaction commits.
+
+    Log failures without raising them back to the caller because the write has already been committed.
     """
     try:
         GlobalConfigService().refresh_value(key=changed_key)
@@ -20,7 +22,9 @@ def refresh_global_config_value_safely(changed_key: str | StrEnum) -> None:
 
 def refresh_global_configs_cache_safely() -> None:
     """
-    Полностью обновить кэш после commit, не маскируя уже сохранённое изменение.
+    Rebuild the full cache snapshot after a successful database commit.
+
+    Log cache failures without propagating them to the operation that already saved the data.
     """
     try:
         GlobalConfigService().refresh_cache()

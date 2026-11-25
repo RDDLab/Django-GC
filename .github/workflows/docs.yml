@@ -1,0 +1,105 @@
+name: Documentation
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Commit from main to deploy (defaults to the selected main revision)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  revision:
+    name: Verify source belongs to main
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      source_sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve documentation revision
+        id: source
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+        run: |
+          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+             ! git merge-base --is-ancestor "$SOURCE_SHA" HEAD; then
+            echo "::error::The documentation revision must be a commit in main."
+            exit 1
+          fi
+          echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+
+  security:
+    name: Scan deployment revision
+    needs: revision
+    uses: ./.github/workflows/security.yml
+    with:
+      source_sha: ${{ needs.revision.outputs.source_sha }}
+
+  checks:
+    name: Verify deployment revision
+    needs: [revision, security]
+    uses: ./.github/workflows/testing.yml
+    with:
+      source_sha: ${{ needs.revision.outputs.source_sha }}
+
+  deploy:
+    name: Deploy documentation over SSH
+    needs: [revision, checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: docs-production
+      url: https://django-gc.rdd-lab.com/
+    permissions: {}
+    steps:
+      - name: Request server-side build and deployment
+        env:
+          SOURCE_SHA: ${{ needs.revision.outputs.source_sha }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
+          DOCS_PORT: ${{ vars.DOCS_PORT }}
+        run: |
+          if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ||
+                ! "$SSH_HOST" =~ ^[[:alnum:].:-]+$ ||
+                ! "$SSH_PORT" =~ ^[1-9][0-9]{0,4}$ ]] ||
+             (( SSH_PORT > 65535 )) ||
+             [[ ! "$SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ||
+                -z "$SSH_PRIVATE_KEY" || ! "$SSH_HOST_KEY" =~ ^ssh-ed25519[[:blank:]]+[A-Za-z0-9+/]+=*$ ]]; then
+            echo "::error::Invalid or missing docs-production SSH settings."
+            exit 1
+          fi
+
+          if [[ ! "$DOCS_PORT" =~ ^[1-9][0-9]{0,4}$ ]] || (( DOCS_PORT > 65535 )); then
+            echo "::error::Set the docs-production variable DOCS_PORT to a free host port from 1 to 65535."
+            exit 1
+          fi
+
+          umask 077
+          ssh_dir=$(mktemp -d)
+          trap 'rm -rf -- "$ssh_dir"' EXIT
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$ssh_dir/key"
+          known_host=$SSH_HOST
+          if (( SSH_PORT != 22 )); then
+            known_host="[$SSH_HOST]:$SSH_PORT"
+          fi
+          printf '%s %s\n' "$known_host" "$SSH_HOST_KEY" > "$ssh_dir/known_hosts"
+          unset SSH_PRIVATE_KEY
+
+          ssh -F /dev/null -nT -p "$SSH_PORT" -l "$SSH_USER" -i "$ssh_dir/key" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o "UserKnownHostsFile=$ssh_dir/known_hosts" -o GlobalKnownHostsFile=/dev/null \
+            -o ConnectTimeout=15 \
+            -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
+            -- "$SSH_HOST" "$SOURCE_SHA $DOCS_PORT"

@@ -19,7 +19,7 @@ pull request.
 После клонирования репозитория установите зависимости:
 
 ```bash
-uv sync --group dev
+uv sync --locked --group dev
 ```
 
 ## Линтинг
@@ -30,14 +30,14 @@ Ruff читает `ruff.toml`: длина строки 120, список ignore 
 
 ```bash
 uv run ruff check --config ruff.toml .
-uv run ruff format --check --config ruff.toml .
 uv run pyrefly check
 ```
 
 ## Тесты
 
 ```bash
-uv run pytest
+bash .github/scripts/compile-translations.sh
+uv run --locked pytest
 ```
 
 ## Документация
@@ -48,7 +48,8 @@ uv run pytest
 
 ```bash
 cd docs
-npm install
+npm install --global "$(node -p 'require("./package.json").packageManager')"
+npm ci
 npm run docs:dev
 ```
 
@@ -60,6 +61,7 @@ Django-Chassis (3000/3001), оба сайта можно держать одно
 нужно переключать языки, запускайте `docs:dev`, а не один `docs:dev:ru`.
 
 ```bash
+npm run docs:typecheck
 npm run docs:build
 npm run docs:serve
 ```
@@ -88,3 +90,11 @@ npm run docs:serve
 - Доменные ключи живут в проектном `StrEnum` и передаются в эти вызовы.
 - Английская и русская документация остаются синхронными.
 - Изменения публичного API требуют записи в `CHANGELOG.md`.
+
+## CI, публикация и деплой
+
+Pull request в `main` запускает проверки безопасности и тесты. Push в `main` запускает тестовый workflow. Он проверяет lock-файл и состояние миграций Django, прогоняет матрицу Python и Django, собирает wheel и sdist, а также проверяет и собирает обе языковые версии документации. Workflow безопасности проверяет секреты, Python, шаблоны Django, JavaScript и TypeScript документации и файлы GitHub Actions. Отдельно выполняется аудит закреплённых зависимостей Python и npm.
+
+Перед выгрузкой пакета в PyPI через Trusted Publishing workflow проверяет выбранный коммит. После выгрузки он запускает деплой документации с этим коммитом на `main`. Workflow документации проверяет принадлежность коммита ветке и вызывает выделенную SSH-команду. Сервер собирает сайт в rootless Docker и восстанавливает прежний образ и порт при ошибке проверки готовности.
+
+[Настроить GitHub Environment и сервер документации](https://github.com/RDDLab/Django-GlobalConfig/blob/main/.github/docs/README.md).

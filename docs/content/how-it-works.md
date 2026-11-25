@@ -44,7 +44,7 @@ There is no single-row database fallback in `get_value()`. Keys have no TTL. A c
 
 - synchronous cache miss
 - targeted refresh of the saved key after `post_save` via `transaction.on_commit()`
-- `post_migrate` after initialization
+- `initialize_global_configs` after commit
 - optional Celery task `django_gc.refresh_global_configs_cache`
 
 Initialization suppresses per-row refresh and schedules one full commit-time refresh.

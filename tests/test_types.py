@@ -12,12 +12,12 @@ from django_gc.services import GlobalConfigService
 
 class SettingTypeChoicesTests(SimpleTestCase):
     """
-    Проверить Django choices собственного ChoicesEnumMixin.
+    Verify that the type enum exposes stored values and human-readable labels as Django choices.
     """
 
     def test_builds_value_label_pairs(self) -> None:
         """
-        Собрать choices из value и label() без IntegerChoices.
+        Build Django choice pairs and compare them with the enum's integer values and display labels.
         """
         choices = [(value, str(label)) for value, label in SettingType.choices()]
         self.assertIn((0, 'String'), choices)
@@ -32,12 +32,12 @@ class SettingTypeChoicesTests(SimpleTestCase):
 
 class GlobalConfigTypeParseTests(SimpleTestCase):
     """
-    Проверить преобразование каждого поддерживаемого SettingType.
+    Exercise conversion from the setting's stored representation to its declared Python type.
     """
 
     def parse(self, value: str, value_type: SettingType) -> object:
         """
-        Разобрать сырое значение без обращения к БД.
+        Construct an unsaved setting and parse the supplied value without consulting the database.
         """
         return GlobalConfigService._parse_value(
             config=GlobalConfig(key='typed-key', value=value, value_type=int(value_type), nullable=False)
@@ -45,7 +45,7 @@ class GlobalConfigTypeParseTests(SimpleTestCase):
 
     def test_scalar_types(self) -> None:
         """
-        Разобрать скалярные типы.
+        Verify conversion of representative scalar values from stored text.
         """
         self.assertEqual(self.parse('hello', SettingType.STRING), 'hello')
         self.assertIs(self.parse('True', SettingType.BOOLEAN), True)
@@ -69,7 +69,7 @@ class GlobalConfigTypeParseTests(SimpleTestCase):
 
     def test_array_types(self) -> None:
         """
-        Разобрать массивы с разделителем точка с запятой.
+        Verify that semicolon-delimited text becomes a list with the declared Python element type.
         """
         self.assertEqual(self.parse('a;b', SettingType.STRING_ARRAY), ['a', 'b'])
         self.assertEqual(self.parse('1;2', SettingType.INTEGER_ARRAY), [1, 2])
@@ -78,7 +78,7 @@ class GlobalConfigTypeParseTests(SimpleTestCase):
 
     def test_json_and_multiple_choices(self) -> None:
         """
-        Разобрать JSON и множественный выбор.
+        Verify that JSON and multiple-choice inputs retain their structured values after parsing.
         """
         self.assertEqual(self.parse('{"a": 1}', SettingType.JSON), {'a': 1})
         self.assertEqual(self.parse('[1, 2]', SettingType.INTEGER_MULTIPLE_CHOICES), [1, 2])

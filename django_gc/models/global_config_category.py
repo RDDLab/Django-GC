@@ -6,10 +6,9 @@ from django_gc.conf import get_category_definition
 
 class GlobalConfigCategory(models.Model):
     """
-    Хранить числовой идентификатор системной категории.
+    Store the numeric ID of a setting category.
 
-    Код и отображаемое название принадлежат project definitions и в БД не
-    дублируются.
+    Read codes and display names from the active definitions so the database stores only the identifier.
     """
 
     id = models.PositiveSmallIntegerField(primary_key=True, editable=False, verbose_name=_('ID'))
@@ -17,7 +16,7 @@ class GlobalConfigCategory(models.Model):
     @property
     def code(self) -> str:
         """
-        Получить код категории из project definitions.
+        Return the declared category code, using the numeric ID as text if the definition is unavailable.
         """
         definition = get_category_definition(category_id=self.id)
         return definition.code if definition is not None else str(self.id)
@@ -25,7 +24,7 @@ class GlobalConfigCategory(models.Model):
     @property
     def name(self) -> str:
         """
-        Получить отображаемое название категории из project definitions.
+        Return the declared display name, using the numeric ID as text if the definition is unavailable.
         """
         definition = get_category_definition(category_id=self.id)
         return definition.name if definition is not None else str(self.id)
@@ -35,7 +34,7 @@ class GlobalConfigCategory(models.Model):
 
     class Meta:
         db_table = 'global_config_categories'
-        verbose_name = _('Категория глобальных конфигураций')
-        verbose_name_plural = _('Категории глобальных конфигураций')
+        verbose_name = _('Global settings category')
+        verbose_name_plural = _('Global settings categories')
         ordering = ['id']
         default_permissions = ['change', 'view']

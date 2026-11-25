@@ -13,25 +13,35 @@ from django_gc import (
     SettingType,
     get_value,
     set_value,
+    set_typed_value,
     refresh_cache,
     is_cache_ready,
 )
 ```
 
+You can import the public functions before Django initializes. Call them after Django has loaded its apps.
+
 ## Functions
 
 | Function | Returns | Notes |
 |---|---|---|
-| `get_value(key)` | typed value | `str` or `StrEnum`; may refresh the snapshot |
+| `get_value(key, *, use_cache=True)` | typed value | accepts a `str` or `StrEnum` key, may refresh the snapshot. `use_cache=False` reads the database |
 | `set_value(key, value)` | `GlobalConfig` | existing keys only; refreshes that cache entry after commit |
+| `set_typed_value(*, key, value)` | `GlobalConfig` | added in 1.1.5. Validates and serializes a typed value for the declared key |
 | `refresh_cache()` | `int` | published key count, or `0` if another owner already published |
 | `is_cache_ready()` | `bool` | marker + every declared DTO, no database |
+
+## Reading and locking multiple settings
+
+<Since v="1.1.5" />
+
+`GlobalConfigService().get_values(keys=keys, use_cache=False)` reads the keys from the database in one query and returns typed values by key. It raises `GlobalConfigNotFoundError` if a key is missing. Use `GlobalConfigService().lock_values(keys=keys)` inside a transaction before computing related writes. See the [transaction example](./operations.md#change-related-values-in-one-transaction).
 
 ## Definitions
 
 `CategoryDefinition(id, code, name)`
 
-`SettingDefinition(key, description, default_value, value_type, category_id, nullable=False, is_read_only=False, variables=None, is_always_update=False)`
+`SettingDefinition(key, description, default_value, value_type, category_id, nullable=False, is_read_only=False, variables=None, is_always_update=False, previous_keys=[])`
 
 ## Exceptions
 
@@ -101,7 +111,7 @@ another process published in time, this is not raised.
 ### `GlobalConfigCreationForbiddenError`
 
 `GlobalConfig.save()` on a new row. Keys are created only from project
-definitions on `post_migrate`, not from Admin, `save()`, or `set_value()`.
+definitions by `initialize_global_configs`, not from Admin, `save()`, or `set_value()`.
 
 ### `GlobalConfigDeletionForbiddenError`
 
@@ -115,3 +125,14 @@ it (lock TTL expired). Publish then fails and the snapshot is not written.
 A failed `release()` after a successful publish is logged and not re-raised.
 
 Internal classes (`GlobalConfigService`, cache DTO, lock) are not part of the stable import surface. Prefer the module-level functions.
+
+
+## initialize_global_configs
+
+<Since v="1.1.5" />
+
+```shell
+python manage.py initialize_global_configs
+```
+
+Explicitly synchronize project and provider definitions after the GC schema exists. Creates missing categories/keys and preserves stored values; only code-owned metadata is updated. Repeating the command is safe. It skips dependent system checks only for this initialization operation. Normal `check` and server startup still validate configuration. No `post_migrate` receiver creates GC data. If tables are absent, the command fails with a schema-migration instruction.

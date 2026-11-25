@@ -10,7 +10,7 @@ This page is the shortest path from an empty Django project to a working Django-
 ## Installation
 
 ```bash
-pip install django-gc
+pip install 'django-gc>=1.1.5'
 ```
 
 ```python
@@ -40,7 +40,7 @@ from django_gc import CategoryDefinition, SettingDefinition, SettingType
 
 
 class SettingKey(StrEnum):
-    MAINTENANCE_ENABLED = 'maintenance-enabled'
+    MAINTENANCE_ENABLED = 'platform.maintenance_enabled'
 
 
 GLOBAL_CONFIG_CATEGORIES = [
@@ -64,18 +64,21 @@ Then migrate:
 
 ```bash
 python manage.py migrate
+python manage.py initialize_global_configs
 ```
 
-`post_migrate` creates missing categories and keys. Existing live values are never overwritten.
+<Changed v="1.1.5" />
+
+Migrations create the schema only. Run `python manage.py initialize_global_configs` explicitly to create categories and keys; existing live values are preserved.
 
 ## Read and write
 
 ```python
-from django_gc import get_value, set_value
+from django_gc import get_value, set_typed_value
 
 enabled = get_value(SettingKey.MAINTENANCE_ENABLED)
-set_value(SettingKey.MAINTENANCE_ENABLED, True)
+set_typed_value(key=SettingKey.MAINTENANCE_ENABLED, value=True)
 ```
 
 Keep keys in a project `StrEnum` and pass that member to `get_value()` and
-`set_value()`. Raw strings work, but the enum is the recommended call site.
+`set_typed_value()`. Raw strings work, but the enum is the recommended call site.

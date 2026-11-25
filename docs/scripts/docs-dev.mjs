@@ -4,9 +4,12 @@ import {fileURLToPath} from 'node:url';
 
 const siteDir = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const docusaurus = resolve(siteDir, 'node_modules/.bin/docusaurus');
-const enUrl = 'http://localhost:3200/';
-const ruUrl = 'http://localhost:3200/ru/';
-const ruOrigin = 'http://localhost:3201/ru/';
+const host = '127.0.0.1';
+const enPort = '3100';
+const ruPort = '3101';
+const enUrl = `http://${host}:${enPort}/`;
+const ruUrl = new URL('/ru/', enUrl).href;
+const ruOrigin = `http://${host}:${ruPort}/ru/`;
 const children = [];
 
 function run(args, extraEnv = {}) {
@@ -71,13 +74,13 @@ function openBrowser(url) {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-run(['start', '--port', '3100', '--no-open']);
+run(['start', '--host', host, '--port', enPort, '--no-open']);
 
 waitFor(enUrl)
   .then(() => {
     process.stdout.write(`\nDocumentation (English, default): ${enUrl}\n`);
     openBrowser(enUrl);
-    run(['start', '--port', '3101', '--locale', 'ru', '--no-open'], {
+    run(['start', '--host', host, '--port', ruPort, '--locale', 'ru', '--no-open'], {
       DOCUSAURUS_GENERATED_FILES_DIR_NAME: '.docusaurus-ru',
     });
     return waitFor(ruOrigin);

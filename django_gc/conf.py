@@ -15,21 +15,29 @@ _REFRESH_SUPPRESSED: ContextVar[bool] = ContextVar('global_config_refresh_suppre
 
 def get_cache_alias() -> str:
     """
-    Вернуть алиас Django cache для снимка GlobalConfig.
+    Return the configured Django cache alias, defaulting to the default cache.
     """
     return str(getattr(settings, 'GLOBAL_CONFIG_CACHE_ALIAS', 'default'))
 
 
 def get_category_definitions() -> Sequence[CategoryDefinition]:
     """
-    Прочитать объявленные проектом категории.
+    Collect the categories declared by the project and its configured providers.
+
+    Resolve provider category IDs from the project's registration without consulting the database.
     """
-    return tuple(getattr(settings, 'GLOBAL_CONFIG_CATEGORIES', ()))
+    from django_gc.registry import collect_definitions
+
+    categories, _definitions = collect_definitions(
+        categories=getattr(settings, 'GLOBAL_CONFIG_CATEGORIES', []),
+        definitions=getattr(settings, 'GLOBAL_CONFIG_DEFINITIONS', [])
+    )
+    return categories
 
 
 def get_category_definition(*, category_id: int) -> CategoryDefinition | None:
     """
-    Найти объявленную проектом категорию по числовому идентификатору.
+    Return the active definition for a numeric category ID, or None when it is undeclared.
     """
     for definition in get_category_definitions():
         if definition.id == category_id:
@@ -39,7 +47,7 @@ def get_category_definition(*, category_id: int) -> CategoryDefinition | None:
 
 def get_category_name(*, category_id: int) -> str:
     """
-    Сопоставить числовой идентификатор категории с названием из definitions.
+    Return the display name for a declared category, or the numeric ID as text when it is undeclared.
     """
     definition = get_category_definition(category_id=category_id)
     return definition.name if definition is not None else str(category_id)
@@ -47,21 +55,29 @@ def get_category_name(*, category_id: int) -> str:
 
 def get_setting_definitions() -> Sequence[SettingDefinition]:
     """
-    Прочитать объявленные проектом ключи.
+    Collect the active settings declared by the project and its configured providers.
+
+    Validate ownership, category references and alias uniqueness before returning the definitions.
     """
-    return tuple(getattr(settings, 'GLOBAL_CONFIG_DEFINITIONS', ()))
+    from django_gc.registry import collect_definitions
+
+    _categories, definitions = collect_definitions(
+        categories=getattr(settings, 'GLOBAL_CONFIG_CATEGORIES', []),
+        definitions=getattr(settings, 'GLOBAL_CONFIG_DEFINITIONS', [])
+    )
+    return definitions
 
 
 def get_required_setting_keys() -> set[str]:
     """
-    Получить системный состав обязательного полного снимка.
+    Return the canonical keys that must be present for the current cache snapshot to be complete.
     """
     return {str(item.key) for item in get_setting_definitions()}
 
 
 def get_encryption_key() -> str | None:
     """
-    Прочитать ключ шифрования SECURE-значений.
+    Read GLOBAL_CONFIG_ENCRYPTION_KEY, returning None when it is absent or empty.
     """
     key = getattr(settings, 'GLOBAL_CONFIG_ENCRYPTION_KEY', None)
     if key is None or key == '':
@@ -71,7 +87,7 @@ def get_encryption_key() -> str | None:
 
 def _build_fernet(*, key: str) -> Fernet:
     """
-    Построить Fernet из произвольной секретной строки.
+    Derive a Fernet key from the UTF-8 encoding of the configured secret using SHA-256 and URL-safe Base64.
     """
     digest = hashlib.sha256(key.encode('utf-8')).digest()
     return Fernet(key=base64.urlsafe_b64encode(digest))
@@ -79,7 +95,9 @@ def _build_fernet(*, key: str) -> Fernet:
 
 def encrypt_value(*, text: str) -> str:
     """
-    Зашифровать SECURE-значение, если задан GLOBAL_CONFIG_ENCRYPTION_KEY.
+    Encrypt a secure value with the configured key and return the token as text.
+
+    Return the input text unchanged when no encryption key has been configured.
     """
     key = get_encryption_key()
     if key is None:
@@ -89,7 +107,10 @@ def encrypt_value(*, text: str) -> str:
 
 def decrypt_value(*, text: str) -> str | None:
     """
-    Расшифровать SECURE-значение, если задан GLOBAL_CONFIG_ENCRYPTION_KEY.
+    Decrypt a stored secure value with the configured key.
+
+    Return the input unchanged when encryption is disabled, or None when a token cannot be decoded or
+    authenticated.
     """
     key = get_encryption_key()
     if key is None:
@@ -102,7 +123,7 @@ def decrypt_value(*, text: str) -> str | None:
 
 def is_refresh_suppressed() -> bool:
     """
-    Проверить, нужно ли пропустить post_save refresh.
+    Report whether the current execution context has disabled post-save cache refresh callbacks.
     """
     return _REFRESH_SUPPRESSED.get()
 
@@ -110,7 +131,9 @@ def is_refresh_suppressed() -> bool:
 @contextmanager
 def suppress_cache_refresh() -> Any:
     """
-    Подавить per-row refresh на время синхронизации definitions.
+    Suppress per-row refresh callbacks while synchronizing definitions.
+
+    Restore the previous setting on exit, including when the operation raises or scopes are nested.
     """
     token: Token[bool] = _REFRESH_SUPPRESSED.set(True)
     try:

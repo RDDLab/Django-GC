@@ -15,7 +15,9 @@ def refresh_global_configs_cache(
     sender: type[GlobalConfig], instance: GlobalConfig, using: str, raw: bool, **kwargs: Any
 ) -> None:
     """
-    Запланировать точечное обновление изменённого ключа после commit.
+    Schedule a refresh for the changed key after commit on the database connection used for the save.
+
+    Skip raw fixtures and definition synchronization, which schedules its own full refresh.
     """
     if raw or is_refresh_suppressed():
         return

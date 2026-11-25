@@ -11,52 +11,52 @@ from django_gc.services import set_value
 
 class GlobalConfigModelTestCase(TestCase):
     """
-    Проверить инварианты модели и программную запись.
+    Verify the model's storage invariants and the public update path for initialized settings.
     """
 
     def test_save_forbids_creating_a_new_key(self) -> None:
         """
-        Запретить создание ключа через save().
+        Verify that calling save directly cannot create a settings row outside explicit initialization.
         """
-        category = GlobalConfig.objects.get(pk='platform-pagination-size').category
+        category = GlobalConfig.objects.get(pk='platform.pagination_size').category
         config = GlobalConfig(key='new-key', value='1', category=category, value_type=4)
         with self.assertRaises(GlobalConfigCreationForbiddenError):
             config.save()
 
     def test_delete_is_forbidden(self) -> None:
         """
-        Запретить удаление существующего ключа.
+        Verify that the model signal rejects deleting an existing setting.
         """
-        config = GlobalConfig.objects.get(pk='platform-pagination-size')
+        config = GlobalConfig.objects.get(pk='platform.pagination_size')
         with self.assertRaises(GlobalConfigDeletionForbiddenError):
             config.delete()
 
     def test_set_value_updates_existing_key(self) -> None:
         """
-        Обновить существующее значение через публичный API.
+        Update an existing setting through the public API and verify the stored value.
         """
-        config = set_value(key='platform-pagination-size', value='50')
+        config = set_value(key='platform.pagination_size', value='50')
         config.refresh_from_db()
         self.assertEqual(config.value, '50')
 
     def test_set_value_unknown_key_raises(self) -> None:
         """
-        Не создавать отсутствующий ключ через set_value().
+        Expect a missing-setting error when an update targets a key that has never been initialized.
         """
         with self.assertRaises(GlobalConfigNotFoundError):
             set_value(key='missing-key', value='1')
 
     def test_meaningless_for_required_empty_value(self) -> None:
         """
-        Отметить пустое обязательное значение как meaningless.
+        Check that a missing required value is reported as meaningless.
         """
-        config = GlobalConfig.objects.get(pk='platform-pagination-size')
+        config = GlobalConfig.objects.get(pk='platform.pagination_size')
         config.value = ''
         self.assertTrue(config.meaningless)
 
     def test_choices_are_built_from_variables(self) -> None:
         """
-        Построить пары Django choices из JSON variables.
+        Check that stored label-to-value metadata produces Django's value-and-label pairs.
         """
-        config = GlobalConfig.objects.get(pk='theme-choice')
+        config = GlobalConfig.objects.get(pk='platform.theme')
         self.assertEqual(set(config.choices), {('dark', 'Dark'), ('light', 'Light')})

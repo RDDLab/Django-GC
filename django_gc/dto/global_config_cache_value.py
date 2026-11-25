@@ -7,9 +7,10 @@ from django_gc.enums import SettingType
 @dataclass(frozen=True)
 class GlobalConfigCacheValueDTO:
     """
-    Типизированное значение снимка GlobalConfig.
+    Pair a cached setting value with its declared type.
 
-    Для SettingType.SECURE поле value содержит только зашифрованное значение.
+    A SECURE entry retains its stored representation, which is ciphertext when encryption is configured.
+    Runtime reads resolve it after cache lookup.
     """
 
     value: Any

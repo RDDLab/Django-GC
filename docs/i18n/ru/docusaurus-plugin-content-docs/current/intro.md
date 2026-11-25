@@ -17,7 +17,7 @@ Django-GC хранит типизированные runtime-настройки �
 
 - [Начало работы](./getting-started.md) — установка, `INSTALLED_APPS`, первые definitions.
 - [Как это работает](./how-it-works.md) — снимок, lock, разбор и путь чтения.
-- [Definitions](./definitions.md) — `CategoryDefinition`, `SettingDefinition` и `post_migrate`.
+- [Definitions](./definitions.md) — `CategoryDefinition`, `SettingDefinition` и `initialize_global_configs`.
 - [Типы](./types.md) — каждый `SettingType` и формат хранения.
 - [Admin](./admin.md) — стандартный `ModelAdmin`, read-only ключи и формы.
 - [История](./history.md) — история Django Admin через `LogEntry`.
@@ -27,8 +27,13 @@ Django-GC хранит типизированные runtime-настройки �
 
 ## Требования
 
-- Python 3.12+
-- Django 6.0+
+| Python | Минимальная версия Django |
+|---|---|
+| 3.12, 3.13, 3.14 | 6.0 |
+| 3.15 | 6.1.3 |
+
+CI запускает весь набор тестов на закреплённой и минимальной версиях Django для каждого Python.
+[Руководство по обновлению и эксплуатации](./operations.md) описывает порядок перехода на 1.1.5.
 
 Celery необязателен и нужен только для периодического refresh:
 

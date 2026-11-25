@@ -10,7 +10,7 @@ sidebar_position: 2
 ## Установка
 
 ```bash
-pip install django-gc
+pip install 'django-gc>=1.1.5'
 ```
 
 ```python
@@ -40,7 +40,7 @@ from django_gc import CategoryDefinition, SettingDefinition, SettingType
 
 
 class SettingKey(StrEnum):
-    MAINTENANCE_ENABLED = 'maintenance-enabled'
+    MAINTENANCE_ENABLED = 'platform.maintenance_enabled'
 
 
 GLOBAL_CONFIG_CATEGORIES = [
@@ -64,18 +64,21 @@ GLOBAL_CONFIG_ENCRYPTION_KEY = 'replace-with-a-long-random-secret'
 
 ```bash
 python manage.py migrate
+python manage.py initialize_global_configs
 ```
 
-`post_migrate` создаёт отсутствующие категории и ключи. Уже существующие рабочие значения не перезаписываются.
+<Changed v="1.1.5" />
+
+Миграции создают только схему. Явно выполните `python manage.py initialize_global_configs` для создания категорий и ключей; рабочие значения сохраняются.
 
 ## Чтение и запись
 
 ```python
-from django_gc import get_value, set_value
+from django_gc import get_value, set_typed_value
 
 enabled = get_value(SettingKey.MAINTENANCE_ENABLED)
-set_value(SettingKey.MAINTENANCE_ENABLED, True)
+set_typed_value(key=SettingKey.MAINTENANCE_ENABLED, value=True)
 ```
 
 Ключи держите в проектном `StrEnum` и передавайте член enum в `get_value()` и
-`set_value()`. Строка тоже работает, но вызов через enum — рекомендуемый.
+`set_typed_value()`. Строка тоже работает, но вызов через enum — рекомендуемый.

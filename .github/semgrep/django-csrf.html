@@ -1,0 +1,27 @@
+<!-- ok: django-form-missing-csrf-token -->
+<form class="settings-form"
+      method="POST" action="{{ request.get_full_path }}">
+    {% csrf_token %}
+    <input type="text" name="setting">
+</form>
+
+<!-- ok: django-form-missing-csrf-token -->
+<form method="get">
+    <input type="search" name="query">
+</form>
+
+<!-- ok: django-form-missing-csrf-token -->
+<form action="path?method=post" data-method="post">
+</form>
+
+<!-- ruleid: django-form-missing-csrf-token -->
+<form method='post'>
+    <button type="submit">Save</button>
+</form>
+
+<!-- ruleid: django-form-missing-csrf-token -->
+<form method=post>
+    {# {% csrf_token %} #}
+    {% comment "template note" %}{% csrf_token %}{% endcomment %}
+    <!-- {% csrf_token %} -->
+</form>

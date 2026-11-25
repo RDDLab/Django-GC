@@ -2,76 +2,157 @@ name: Testing Django-GC pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
   workflow_call:
+    inputs:
+      source_sha:
+        description: Commit to verify (defaults to the triggering commit)
+        type: string
+        required: false
 
 permissions:
   contents: read
 
+env:
+  UV_VERSION: "0.13.10"
+
 jobs:
-
   lint:
-    runs-on: self-hosted
-
+    name: Python lint, types and Django checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_sha || github.sha }}
           persist-credentials: false
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
-
-      - name: Set up Python
-        run: uv python install 3.12
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: ${{ env.UV_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --locked --group dev --python 3.12
 
-      - name: Run ruff (lint)
-        run: uv run ruff check --config ruff.toml .
-
-      - name: Run ruff (format check)
-        run: uv run ruff format --check --config ruff.toml .
-
-      - name: Run pyrefly (type check)
-        run: uv run pyrefly check
-
-      - name: Clean up runner artifacts
-        if: always()
+      - name: Run Ruff, Pyrefly and Django system checks
+        env:
+          DJANGO_SETTINGS_MODULE: tests.settings
         run: |
-          rm -rf .venv .pytest_cache .ruff_cache .coverage htmlcov
-          find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+          uv run --locked --python 3.12 ruff check .
+          uv run --locked --python 3.12 pyrefly check
+          uv run --locked --python 3.12 python -m django check
+          uv run --locked --python 3.12 python -m django makemigrations --check --dry-run django_gc
 
   unit-test:
-    runs-on: self-hosted
-
+    name: Pytest (Python ${{ matrix.python }}, Django ${{ matrix.django }})
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      UV_MANAGED_PYTHON: "true"
     strategy:
+      fail-fast: false
+      max-parallel: 1
       matrix:
-        python-version: [ "3.12", "3.13", "3.14" ]
-      fail-fast: true
-
+        python: ["3.12", "3.13", "3.14", "3.15"]
+        django: [locked, minimum]
+        include:
+          - python: "3.12"
+            django_min: "6.0"
+          - python: "3.13"
+            django_min: "6.0"
+          - python: "3.14"
+            django_min: "6.0"
+          - python: "3.15"
+            django_min: "6.1.3"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.source_sha || github.sha }}
           persist-credentials: false
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: ${{ env.UV_VERSION }}
 
-      - name: Set up Python ${{ matrix.python-version }}
-        run: uv python install ${{ matrix.python-version }}
-
-      - name: Install dependencies
-        run: uv sync --group dev --python ${{ matrix.python-version }}
-
-      - name: Run tests
-        run: uv run --python ${{ matrix.python-version }} pytest
-
-      - name: Clean up runner artifacts
-        if: always()
+      - name: Compile translations
         run: |
-          rm -rf .venv .pytest_cache .ruff_cache .coverage htmlcov
-          find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+          sudo apt-get update
+          sudo apt-get install --yes gettext
+          bash .github/scripts/compile-translations.sh
+
+      - name: Run tests with locked Django
+        if: matrix.django == 'locked'
+        env:
+          PYTHON_VERSION: ${{ matrix.python }}
+        run: uv run --locked --python "$PYTHON_VERSION" pytest
+
+      - name: Run tests with minimum Django
+        if: matrix.django == 'minimum'
+        env:
+          PYTHON_VERSION: ${{ matrix.python }}
+          DJANGO_MIN: ${{ matrix.django_min }}
+        run: uv run --locked --python "$PYTHON_VERSION" --with "django==$DJANGO_MIN" pytest
+
+  package:
+    name: Build wheel and source archive
+    needs: unit-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d # v10.4.0
+        with:
+          version: ${{ env.UV_VERSION }}
+
+      - name: Compile translations and build distributions
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes gettext
+          bash .github/scripts/compile-translations.sh
+          uv build --python 3.12
+
+  documentation:
+    name: Verify English and Russian documentation
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: docs/package.json
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Type-check the documentation
+        working-directory: docs
+        run: |
+          npm install --global "$(node -p 'require("./package.json").packageManager')"
+          npm ci
+          npm run docs:typecheck
+
+      - name: Build and verify the documentation container
+        env:
+          DOCS_IMAGE: django-gc-docs:ci
+          DOCS_PORT: "18080"
+        run: |
+          docker build --file .github/docs/Dockerfile --tag "$DOCS_IMAGE" .
+          compose() {
+            docker compose --project-name django-gc-docs-ci --env-file /dev/null --file .github/docs/compose.yml "$@"
+          }
+          trap 'compose down' EXIT
+          compose up --detach --wait --wait-timeout 90
+          curl --fail --silent --show-error --output /dev/null "http://127.0.0.1:$DOCS_PORT/"
+          curl --fail --silent --show-error --output /dev/null "http://127.0.0.1:$DOCS_PORT/ru/"

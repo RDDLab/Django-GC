@@ -1,5 +1,8 @@
 """
-Minimal Django settings used to run the django-gc test suite.
+Configure a standalone Django project for the Django-GC test suite.
+
+Use SQLite, a local-memory cache and standard Django Admin so tests can exercise public behavior without
+external services.
 """
 
 from pathlib import Path

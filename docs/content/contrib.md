@@ -20,7 +20,7 @@ the official guide in the
 After cloning the repository, install dependencies:
 
 ```bash
-uv sync --group dev
+uv sync --locked --group dev
 ```
 
 ## Linting
@@ -31,14 +31,14 @@ file — the defaults fight Django admin class attrs and docs examples.
 
 ```bash
 uv run ruff check --config ruff.toml .
-uv run ruff format --check --config ruff.toml .
 uv run pyrefly check
 ```
 
 ## Testing
 
 ```bash
-uv run pytest
+bash .github/scripts/compile-translations.sh
+uv run --locked pytest
 ```
 
 ## Working with documentation
@@ -49,7 +49,8 @@ Public API is marked with `<Since v="x.y.z" />` badges instead.
 
 ```bash
 cd docs
-npm install
+npm install --global "$(node -p 'require("./package.json").packageManager')"
+npm ci
 npm run docs:dev
 ```
 
@@ -61,9 +62,18 @@ locale dropdown can switch both ways. Ports differ from Django-Chassis
 `docs:dev:ru` alone, if you need to switch languages.
 
 ```bash
+npm run docs:typecheck
 npm run docs:build
 npm run docs:serve
 ```
+
+## CI, releases and deployment
+
+Pull requests to `main` run Security checks and the test pipeline. Pushes to `main` run the test pipeline. It uses the dependency lock, verifies the Django migration state, runs the Python and Django matrix, builds both Python distributions and verifies the English and Russian documentation. The security workflow scans secrets, Python, Django templates, documentation JavaScript and TypeScript, and workflow files. It audits locked Python and npm dependencies.
+
+The release workflow verifies the selected commit before uploading wheel and sdist to PyPI using Trusted Publishing. After upload it dispatches the documentation workflow on `main` for that commit. The documentation workflow rechecks its ancestry and deploys through a dedicated SSH command. The deployment server builds the site with rootless Docker and restores the previous image and port if the new container fails its health check.
+
+[Set up the GitHub environment and the documentation server](https://github.com/RDDLab/Django-GlobalConfig/blob/main/.github/docs/README.md).
 
 ## Version badges
 

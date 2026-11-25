@@ -5,12 +5,13 @@ from django_gc.conf import decrypt_value, encrypt_value
 
 class EncryptionKeyTests(SimpleTestCase):
     """
-    Проверить шифрование SECURE одним ключом из settings.
+    Verify the secure-value codec when the project configures an encryption key and when it omits one.
     """
 
     def test_roundtrip_with_encryption_key(self) -> None:
         """
-        Зашифровать и расшифровать одним GLOBAL_CONFIG_ENCRYPTION_KEY.
+        Round-trip a secret using GLOBAL_CONFIG_ENCRYPTION_KEY and verify that the stored token differs from
+        plaintext.
         """
         encrypted = encrypt_value(text='plain-secret')
 
@@ -20,13 +21,13 @@ class EncryptionKeyTests(SimpleTestCase):
     @override_settings(GLOBAL_CONFIG_ENCRYPTION_KEY=None)
     def test_passthrough_without_encryption_key(self) -> None:
         """
-        Без ключа хранить SECURE открытым текстом.
+        Verify that encryption and decryption pass the text through when no key is configured.
         """
         self.assertEqual(encrypt_value(text='plain-secret'), 'plain-secret')
         self.assertEqual(decrypt_value(text='plain-secret'), 'plain-secret')
 
     def test_invalid_ciphertext_returns_none(self) -> None:
         """
-        Невалидный шифротекст не выдавать как секрет.
+        Check that an invalid Fernet token yields None instead of a usable cleartext value.
         """
         self.assertIsNone(decrypt_value(text='not-a-fernet-token'))

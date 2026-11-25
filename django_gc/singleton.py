@@ -1,14 +1,16 @@
-from typing import Self
+from typing import ClassVar, Self
 
 
 class Singleton:
     """
-    Хранить один экземпляр класса на процесс.
+    Reuse a single instance per concrete class in the current process.
     """
+
+    _instance: ClassVar['Singleton | None'] = None
 
     def __new__(cls, *args: object, **kwargs: object) -> Self:
         """
-        Вернуть уже созданный экземпляр класса, если он есть.
+        Return the subclass's existing instance or allocate and remember one on first use.
         """
         instance = cls.__dict__.get('_instance')
         if instance is None:

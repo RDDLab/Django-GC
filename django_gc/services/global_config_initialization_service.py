@@ -3,6 +3,7 @@ from typing import Any, ClassVar
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from django_gc.conf import encrypt_value, get_category_definitions, get_setting_definitions, suppress_cache_refresh
 from django_gc.dto import SettingDefinition
@@ -14,7 +15,10 @@ from django_gc.utils import table_exists
 
 class GlobalConfigInitializationService(Singleton):
     """
-    Синхронизировать управляемые кодом категории и ключи GlobalConfig.
+    Synchronize code-declared categories and settings with the database.
+
+    Explicit initialization creates missing rows and updates managed metadata while preserving values
+    already in use.
     """
 
     ARRAY_TYPES: ClassVar[frozenset[SettingType]] = frozenset(
@@ -35,7 +39,9 @@ class GlobalConfigInitializationService(Singleton):
     @transaction.atomic
     def initialize(self) -> None:
         """
-        Создать отсутствующие definitions и обновить кодовые метаданные ключей.
+        Apply the active definitions in a transaction when both configuration tables exist.
+
+        Suppress per-row cache refresh callbacks and schedule a full refresh after commit.
         """
         required_tables = [GlobalConfig._meta.db_table, GlobalConfigCategory._meta.db_table]
         if not all(table_exists(table_name=table_name) for table_name in required_tables):
@@ -52,7 +58,7 @@ class GlobalConfigInitializationService(Singleton):
     @classmethod
     def _create_missing_categories(cls) -> None:
         """
-        Создать отсутствующие числовые категории из project definitions.
+        Insert rows for declared category IDs absent from the database.
         """
         existing_ids: set[int] = set(GlobalConfigCategory.objects.values_list('id', flat=True))
         categories = [
@@ -63,10 +69,14 @@ class GlobalConfigInitializationService(Singleton):
 
     def _synchronize_configs(self) -> None:
         """
-        Создать новые ключи и синхронизировать метаданные существующих ключей.
+        Lock existing settings, update their managed metadata and insert missing keys.
+
+        Reuse declared previous values when the canonical key is absent. Reject conflicting values or
+        previous rows with a different type.
         """
         existing_configs: dict[str, GlobalConfig] = {
-            config.key: config for config in GlobalConfig.objects.select_related('category')
+            config.key: config
+            for config in GlobalConfig.objects.select_for_update().select_related('category').order_by('pk')
         }
         categories_by_id: dict[int, GlobalConfigCategory] = GlobalConfigCategory.objects.in_bulk()
         new_configs: list[GlobalConfig] = []
@@ -75,10 +85,21 @@ class GlobalConfigInitializationService(Singleton):
             try:
                 category = categories_by_id[item.category_id]
             except KeyError:
-                raise KeyError(f'Не объявлена категория GlobalConfig с id={item.category_id}.') from None
+                raise KeyError(
+                    _('GlobalConfig category id=%(category_id)s is not declared.')
+                    % {'category_id': item.category_id}
+                ) from None
             config = existing_configs.get(str(item.key))
             if config is None:
-                new_configs.append(self._build_config(item=item, category=category))
+                previous = [existing_configs[key] for key in item.previous_keys if key in existing_configs]
+                if previous:
+                    if any(row.value != previous[0].value for row in previous[1:]):
+                        raise ValueError(f'Conflicting previous values for GlobalConfig key {item.key!s}.')
+                    if any(row.value_type != item.value_type for row in previous):
+                        raise ValueError(f'Previous value type differs for GlobalConfig key {item.key!s}.')
+                new_configs.append(self._build_config(
+                    item=item, category=category, previous=previous[0] if previous else None
+                ))
                 continue
 
             self._update_metadata(config=config, item=item, category=category)
@@ -87,14 +108,18 @@ class GlobalConfigInitializationService(Singleton):
             GlobalConfig.objects.bulk_create(new_configs)
 
     @classmethod
-    def _build_config(cls, item: SettingDefinition, category: GlobalConfigCategory) -> GlobalConfig:
+    def _build_config(
+        cls, item: SettingDefinition, category: GlobalConfigCategory, previous: GlobalConfig | None = None
+    ) -> GlobalConfig:
         """
-        Построить новую модель конфигурации из definitions.
+        Build an unsaved settings row from a definition and its category.
+
+        Reuse the raw value from a previous row when provided. Otherwise, prepare the default for storage.
         """
         return GlobalConfig(
             key=str(item.key),
             description=item.description,
-            value=cls._prepare_default_value(item=item),
+            value=previous.value if previous is not None else cls._prepare_default_value(item=item),
             value_type=item.value_type,
             category=category,
             nullable=item.nullable,
@@ -106,7 +131,10 @@ class GlobalConfigInitializationService(Singleton):
     @classmethod
     def _update_metadata(cls, config: GlobalConfig, item: SettingDefinition, category: GlobalConfigCategory) -> None:
         """
-        Обновить только управляемые кодом метаданные, не меняя рабочее значение.
+        Update the fields managed by the active definition and leave the stored value intact.
+
+        Replace choice options only for choice types with is_always_update enabled. Save when a managed
+        field actually changes.
         """
         if item.is_always_update and item.value_type in cls.CHOICE_TYPES:
             variables = item.variables
@@ -134,14 +162,27 @@ class GlobalConfigInitializationService(Singleton):
     @classmethod
     def _prepare_default_value(cls, item: SettingDefinition) -> Any:
         """
-        Подготовить начальное строковое представление значения для БД.
+        Prepare the initial value when there is no previous row to reuse.
+
+        Consult the owning provider when present. Apply the storage rules for secure values, arrays and
+        provider-supplied JSON.
         """
+        from django_gc.registry import get_provider
+
+        provider = get_provider(key=str(item.key))
+        default = item.default_value if provider is None else provider.initial_value(
+            key=str(item.key), default=item.default_value
+        )
+        if provider is not None and item.value_type == SettingType.JSON:
+            import json
+
+            return json.dumps(default)
         if item.value_type == SettingType.SECURE:
-            return encrypt_value(text=str(item.default_value))
+            return encrypt_value(text=str(default))
         if item.value_type not in cls.ARRAY_TYPES:
-            return item.default_value
+            return default
         try:
-            values = literal_eval(str(item.default_value))
+            values = literal_eval(str(default))
         except (ValueError, SyntaxError):
-            return item.default_value
+            return default
         return ';'.join(map(str, values))

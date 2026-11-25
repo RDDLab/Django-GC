@@ -9,7 +9,10 @@ from django_gc.enums.choices_enum import ChoicesEnumMixin
 
 class SettingType(ChoicesEnumMixin, IntEnum):
     """
-    Типы данных, использующиеся в глобальных конфигурациях.
+    Identify the supported GlobalConfig storage and runtime value types.
+
+    The integer codes are stored in the database. Display labels may be translated independently of those
+    codes.
     """
 
     STRING = 0
@@ -39,7 +42,7 @@ class SettingType(ChoicesEnumMixin, IntEnum):
     @override
     def label(self) -> Promise:
         """
-        Вернуть переводимую подпись типа.
+        Return the lazy display label for this type so the admin can resolve it in the active language.
         """
         return {
             self.STRING: _('String'),
@@ -50,7 +53,7 @@ class SettingType(ChoicesEnumMixin, IntEnum):
             self.SECURE: _('Secure'),
             self.DATE: _('Date'),
             self.TIME: _('Time'),
-            self.DATETIME: _('DateTime'),
+            self.DATETIME: _('Date and time'),
             self.STRING_ARRAY: _('String Array'),
             self.INTEGER_ARRAY: _('Integer Array'),
             self.FLOAT_ARRAY: _('Float Array'),
@@ -60,7 +63,7 @@ class SettingType(ChoicesEnumMixin, IntEnum):
             self.INTEGER_CHOICES: _('Integer Choices'),
             self.FLOAT_CHOICES: _('Float Choices'),
             self.DECIMAL_CHOICES: _('Decimal Choices'),
-            self.JSON: _('Json'),
+            self.JSON: _('JSON'),
             self.INTEGER_MULTIPLE_CHOICES: _('Integer Multiple Choices'),
             self.STRING_MULTIPLE_CHOICES: _('String Multiple Choices'),
             self.FLOAT_MULTIPLE_CHOICES: _('Float Multiple Choices'),

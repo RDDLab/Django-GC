@@ -1,4 +1,6 @@
-![Logo](https://github.com/RDDLab/Django-GlobalConfig/raw/main/docs/static/img/logo.svg)
+<div align="center">
+  <img src="https://github.com/RDDLab/Django-GlobalConfig/raw/main/docs/static/img/logo.svg" alt="Django-GC" width="560">
+</div>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 [![Version: 1.1.6](https://img.shields.io/badge/version-1.1.6-blue.svg?style=for-the-badge)](https://github.com/RDDLab/Django-GlobalConfig/releases/tag/1.1.6)

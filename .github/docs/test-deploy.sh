@@ -20,8 +20,19 @@ reject_deploy_arguments "$sha" 18080 extra
 if command -v flock >/dev/null; then
     test_home=$(mktemp -d)
     trap 'rm -rf -- "$test_home"' EXIT
-    HOME="$test_home" bash "$docs_dir/prepare-server.sh" "$sha"
-    HOME="$test_home" bash "$docs_dir/prepare-server.sh" "$sha"
+    mkdir "$test_home/bin"
+    cat > "$test_home/bin/ssh" <<'SH'
+#!/bin/bash
+set -euo pipefail
+exec bash -c "${@: -1}"
+SH
+    chmod +x "$test_home/bin/ssh"
+
+    for _ in 1 2; do
+        HOME="$test_home" PATH="$test_home/bin:$PATH" SSH_HOST=docs.example.invalid SSH_PORT=22 \
+            SSH_USER=deploy SSH_PRIVATE_KEY=mock SSH_HOST_KEY='ssh-ed25519 AAAA' \
+            bash "$docs_dir/prepare-over-ssh.sh" "$sha"
+    done
     prepared="$test_home/.local/share/django-gc-docs/$sha"
     cmp -s "$docs_dir/deploy-docs.sh" "$prepared/deploy-docs.sh"
     cmp -s "$docs_dir/compose.yml" "$prepared/compose.yml"

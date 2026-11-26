@@ -80,8 +80,8 @@ The existing GitHub Actions key can use the `restrict` option in
 commands. For a key previously configured with `command=`, use a dedicated
 key without that option for both preparation and deployment.
 
-After the checks succeed, `docs.yml` calls `prepare-docs.yml` using the
-same `docs-production` secrets. It sends the deployment script and
+After the checks succeed, the preparation job in `docs.yml` reads the
+`docs-production` secrets directly. It sends the deployment script and
 Compose file over SSH and installs both together under
 `$HOME/.local/share/django-gc-docs/<workflow-sha>/`. Repeating the
 preparation for the same revision reuses the installed files. To prepare

@@ -55,9 +55,26 @@ jobs:
       source_sha: ${{ needs.revision.outputs.source_sha }}
 
   prepare:
-    name: Prepare documentation server
+    name: Install documentation deployment files as the SSH user
     needs: checks
-    uses: ./.github/workflows/prepare-docs.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: docs-production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Prepare server files
+        shell: bash
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
+        run: bash .github/docs/prepare-over-ssh.sh "$GITHUB_SHA"
 
   deploy:
     name: Deploy documentation over SSH

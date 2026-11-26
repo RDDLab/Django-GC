@@ -17,13 +17,14 @@ trap 'rm -rf -- "$staging_dir"' EXIT
 
 bash -n "$source_dir/deploy-docs.sh"
 install -m 0700 "$source_dir/deploy-docs.sh" "$staging_dir/deploy-docs.sh"
-install -m 0600 "$source_dir/compose.yml" "$staging_dir/compose.yml"
+install -m 0600 "$source_dir/compose.yml" "$source_dir/compose.network.yml" "$staging_dir/"
 
 exec 9>"$base_dir/prepare.lock"
 flock -w 60 9
 if [[ -e "$install_dir" ]]; then
     if ! cmp -s "$staging_dir/deploy-docs.sh" "$install_dir/deploy-docs.sh" ||
-       ! cmp -s "$staging_dir/compose.yml" "$install_dir/compose.yml"; then
+       ! cmp -s "$staging_dir/compose.yml" "$install_dir/compose.yml" ||
+       ! cmp -s "$staging_dir/compose.network.yml" "$install_dir/compose.network.yml"; then
         echo 'Prepared deployment files do not match this workflow revision.' >&2
         exit 1
     fi

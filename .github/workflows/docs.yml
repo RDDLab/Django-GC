@@ -157,6 +157,7 @@ jobs:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
           DOCS_PORT: ${{ vars.DOCS_PORT }}
+          DOCS_IP: ${{ vars.DOCS_IP }}
         run: |
           if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ || ! "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::Full source and workflow commit SHAs are required."
@@ -167,6 +168,12 @@ jobs:
             exit 1
           fi
 
+          ipv4_octet='(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])'
+          if [[ ! "$DOCS_IP" =~ ^($ipv4_octet\.){3}$ipv4_octet$ ]]; then
+            echo "::error::Set DOCS_IP to the portal's IPv4 address on docs_net."
+            exit 1
+          fi
+
           docker image save "$DOCS_IMAGE_NAME:$SOURCE_SHA" | gzip -1 |
             bash .github/docs/ssh.sh \
-              "bash \"\$HOME/.local/share/django-gc-docs/$GITHUB_SHA/deploy-docs.sh\" $SOURCE_SHA $DOCS_PORT $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+              "bash \"\$HOME/.local/share/django-gc-docs/$GITHUB_SHA/deploy-docs.sh\" $SOURCE_SHA $DOCS_PORT $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT $DOCS_IP"

@@ -2,13 +2,14 @@
 set -euo pipefail
 umask 077
 
-if (( $# != 3 )) || [[ ! "$1" =~ ^[0-9a-f]{40}$ || ! "$2" =~ ^[1-9][0-9]{0,4}$ ||
-      ! "$3" =~ ^[0-9]+-[0-9]+$ ]] || (( $2 > 65535 )); then
-    echo 'Expected a full commit SHA, a host port from 1 to 65535, and a workflow run and attempt.' >&2
+ipv4_octet='(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])'
+if (( $# != 4 )) || [[ ! "$1" =~ ^[0-9a-f]{40}$ || ! "$2" =~ ^[1-9][0-9]{0,4}$ ||
+      ! "$3" =~ ^[0-9]+-[0-9]+$ || ! "$4" =~ ^($ipv4_octet\.){3}$ipv4_octet$ ]] || (( $2 > 65535 )); then
+    echo 'Expected a full commit SHA, host port, workflow run and attempt, and IPv4 address.' >&2
     exit 1
 fi
 sha=$1
-export DOCS_PORT=$2
+export DOCS_PORT=$2 DOCS_IP=$4
 image_build="$sha $3"
 
 state_dir="$HOME/.local/state/django-gc-docs"
@@ -28,7 +29,11 @@ echo 'Waiting for the documentation deployment lock.'
 flock -w 300 9
 
 compose() {
-    docker compose --project-name django-gc-docs --env-file /dev/null --file "$compose_file" "$@"
+    local files=(--file "$compose_file")
+    if [[ -n "$DOCS_IP" ]]; then
+        files+=(--file "$deploy_dir/compose.network.yml")
+    fi
+    docker compose --project-name django-gc-docs --env-file /dev/null "${files[@]}" "$@"
 }
 
 cleanup() {
@@ -39,7 +44,7 @@ cleanup() {
     if [[ "$restore_service" == true ]]; then
         echo 'Deployment failed. Restoring the previous documentation service.' >&2
         if [[ -n "$previous_image" ]]; then
-            export DOCS_IMAGE=django-gc-docs:rollback DOCS_PORT="$previous_port"
+            export DOCS_IMAGE=django-gc-docs:rollback DOCS_PORT="$previous_port" DOCS_IP="$previous_ip"
             if ! { docker image tag "$previous_image" "$DOCS_IMAGE" && compose up --detach --no-build --wait --wait-timeout 60; }; then
                 echo 'Could not restore the previous documentation image.' >&2
             fi
@@ -54,14 +59,21 @@ cleanup() {
 restore_service=false
 previous_image=''
 previous_port=''
+previous_ip=''
 trap cleanup EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
 export DOCS_IMAGE=django-gc-docs:"$sha"
-previous_container=$(compose ps --all --quiet docs)
+if ! docker network inspect docs_net >/dev/null; then
+    echo 'The external Docker network docs_net must exist on the documentation server.' >&2
+    exit 1
+fi
+
+previous_container=$(DOCS_IP="" compose ps --all --quiet docs)
 if [[ -n "$previous_container" ]]; then
+    previous_ip=$(docker inspect --format '{{with index .NetworkSettings.Networks "docs_net"}}{{if and .IPAMConfig .IPAMConfig.IPv4Address}}{{.IPAMConfig.IPv4Address}}{{else}}{{.IPAddress}}{{end}}{{end}}' "$previous_container")
     previous_image=$(docker inspect --format '{{.Image}}' "$previous_container")
     previous_port=$(docker inspect --format '{{range index .HostConfig.PortBindings "8080/tcp"}}{{.HostPort}}{{end}}' "$previous_container")
     if [[ ! "$previous_port" =~ ^[1-9][0-9]{0,4}$ ]] || (( previous_port > 65535 )); then

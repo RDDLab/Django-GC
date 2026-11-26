@@ -43,13 +43,14 @@ and add the branch `main`. Add these five **Environment secrets**.
 | `SSH_USER` | Account authorised to deploy the documentation |
 | `SSH_HOST_KEY` | Server's ED25519 public host key |
 
-Add `DOCS_PORT` as an **Environment variable**.
+Set these **Environment variables**.
 
 | Variable | Value |
 |---|---|
 | `DOCS_PORT` | Free loopback port for this documentation site, for example `18080` |
+| `DOCS_IP` | Free static IPv4 address for this site on the existing Docker network `docs_net` |
 
-Assign each documentation site on the host its own `DOCS_PORT`.
+Assign each site its own `DOCS_IP` and `DOCS_PORT`.
 Set `SSH_USER` to the existing deployment account, for example `deploy`. For `SSH_HOST_KEY`, use the first two
 fields of the server's `/etc/ssh/ssh_host_ed25519_key.pub`, for example
 `ssh-ed25519 AAAA…`. Obtain the key through the server console or its
@@ -82,7 +83,7 @@ key without that option for both preparation and deployment.
 
 After the checks succeed, the preparation job in `docs.yml` reads the
 `docs-production` secrets directly. It sends the deployment script and
-Compose file over SSH and installs both together under
+Compose files over SSH and installs them together under
 `$HOME/.local/share/django-gc-docs/<workflow-sha>/`. Repeating the
 preparation for the same revision reuses the installed files. To prepare
 the server by itself, run **Prepare documentation server** from `main`.
@@ -98,14 +99,15 @@ Docker context or socket. When a rootless socket is available and no custom Dock
 is selected, the script uses that socket. Both SSH jobs use the existing account's permissions.
 
 Point the HTTPS reverse proxy for `django-gc.rdd-lab.com` at
-`127.0.0.1:<DOCS_PORT>`. Angie and the container health check use the
-container's internal port `8080`.
+`127.0.0.1:<DOCS_PORT>` for a host-based proxy or at `<DOCS_IP>:8080` for a
+proxy container on the existing `docs_net` network. The static address must be
+available in that network’s IPv4 subnet.
 
 The deployment lock serializes updates. The container checks both `/`
 and `/ru/`. If the new deployment fails, the script restores the previous
-image and host port and reports a failed run. To roll back a healthy
+image, host port, and previous network attachment and reports a failed run. To roll back a healthy
 deployment, dispatch the workflow with a previously deployed commit.
-The workflow uses the current `DOCS_PORT` for that deployment.
+The workflow uses the current `DOCS_PORT` and `DOCS_IP` for that deployment.
 
 The runner builds from a source archive. The sitemap uses Git dates when built from a full checkout.
 

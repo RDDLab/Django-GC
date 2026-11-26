@@ -10,6 +10,10 @@ on:
         description: Commit to scan (defaults to the triggering commit)
         required: false
         type: string
+      use_docs_runner:
+        description: Run documentation deployment checks on the self-hosted Linux X64 runner
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,7 +25,9 @@ env:
 jobs:
   secrets:
     name: Gitleaks secret scan
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ fromJSON(inputs.use_docs_runner && github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' && '["self-hosted","Linux","X64"]' || '["ubuntu-latest"]') }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -37,7 +43,9 @@ jobs:
   python:
     name: Python and Django security
     needs: secrets
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ fromJSON(inputs.use_docs_runner && github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' && '["self-hosted","Linux","X64"]' || '["ubuntu-latest"]') }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -65,7 +73,9 @@ jobs:
   javascript:
     name: JavaScript and TypeScript security
     needs: python
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ fromJSON(inputs.use_docs_runner && github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' && '["self-hosted","Linux","X64"]' || '["ubuntu-latest"]') }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -96,7 +106,9 @@ jobs:
   workflows:
     name: GitHub Actions security
     needs: javascript
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ fromJSON(inputs.use_docs_runner && github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' && '["self-hosted","Linux","X64"]' || '["ubuntu-latest"]') }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

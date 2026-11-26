@@ -3,7 +3,8 @@ set -euo pipefail
 
 docs_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 sha=0123456789abcdef0123456789abcdef01234567
-expected='Expected a full commit SHA and a host port from 1 to 65535.'
+workflow_run=100-1
+expected='Expected a full commit SHA, a host port from 1 to 65535, and a workflow run and attempt.'
 reject_deploy_arguments() {
     local output
     if output=$(bash "$docs_dir/deploy-docs.sh" "$@" 2>&1) || [[ "$output" != "$expected" ]]; then
@@ -11,11 +12,12 @@ reject_deploy_arguments() {
         exit 1
     fi
 }
-reject_deploy_arguments "$sha"
-reject_deploy_arguments bad-sha 18080
-reject_deploy_arguments "$sha" 0
-reject_deploy_arguments "$sha" 65536
-reject_deploy_arguments "$sha" 18080 extra
+reject_deploy_arguments "$sha" 18080
+reject_deploy_arguments bad-sha 18080 "$workflow_run"
+reject_deploy_arguments "$sha" 0 "$workflow_run"
+reject_deploy_arguments "$sha" 65536 "$workflow_run"
+reject_deploy_arguments "$sha" 18080 invalid-run
+reject_deploy_arguments "$sha" 18080 "$workflow_run" extra
 
 if command -v flock >/dev/null; then
     test_home=$(mktemp -d)
@@ -36,6 +38,72 @@ SH
     prepared="$test_home/.local/share/django-gc-docs/$sha"
     cmp -s "$docs_dir/deploy-docs.sh" "$prepared/deploy-docs.sh"
     cmp -s "$docs_dir/compose.yml" "$prepared/compose.yml"
+
+    cat > "$test_home/bin/docker" <<'SH'
+#!/bin/bash
+set -euo pipefail
+
+case "$1 $2" in
+    'image load')
+        [[ "$*" == 'image load --quiet' ]]
+        [[ "$(gzip -dc)" == "$TEST_LOADED_RUN" ]]
+        ;;
+    'image inspect')
+        printf '%s %s\n' "$TEST_DOCS_SHA" "$TEST_LOADED_RUN"
+        ;;
+    'image tag')
+        [[ "$3" == previous-image && "$4" == *:rollback ]]
+        ;;
+    'compose --project-name')
+        shift 7
+        case "$*" in
+            'ps --all --quiet docs')
+                if [[ "$TEST_HEALTH" != healthy ]]; then
+                    printf '%s\n' previous
+                fi
+                ;;
+            'up --detach --no-build --wait --wait-timeout 60')
+                if [[ "$DOCS_IMAGE" == *:rollback ]]; then
+                    [[ "$DOCS_PORT" == 28080 ]]
+                    touch "$HOME/container-restored"
+                else
+                    touch "$HOME/container-started"
+                fi
+                ;;
+            'ps --quiet docs') printf '%s\n' docs ;;
+            *) exit 1 ;;
+        esac
+        ;;
+    'inspect --format')
+        case "$3 $4" in
+            '{{.Image}} previous') printf '%s\n' previous-image ;;
+            *' previous') printf '%s\n' 28080 ;;
+            *) printf '%s %s %s\n' "$TEST_DOCS_SHA" "$TEST_LOADED_RUN" "$TEST_HEALTH" ;;
+        esac
+        ;;
+    *) exit 1 ;;
+esac
+SH
+    chmod +x "$test_home/bin/docker"
+
+    deploy_test_image() {
+        printf '%s' "$1" | gzip -1 |
+            HOME="$test_home" PATH="$test_home/bin:$PATH" DOCKER_CONTEXT=docs-test \
+                TEST_DOCS_SHA="$sha" TEST_LOADED_RUN="$1" TEST_HEALTH="$2" \
+                bash "$prepared/deploy-docs.sh" "$sha" 18080 "$workflow_run"
+    }
+
+    if deploy_test_image 100-2 healthy || [[ -e "$test_home/container-started" ]]; then
+        echo 'An unexpected image reached the documentation service.' >&2
+        exit 1
+    fi
+    deploy_test_image "$workflow_run" healthy
+    test -e "$test_home/container-started"
+    if deploy_test_image "$workflow_run" unhealthy; then
+        echo 'The deployment accepted an unhealthy documentation container.' >&2
+        exit 1
+    fi
+    test -e "$test_home/container-restored"
 fi
 
 export DOCS_IMAGE=django-gc-docs:test

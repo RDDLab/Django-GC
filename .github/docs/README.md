@@ -13,7 +13,7 @@ gh workflow run docs.yml --repo RDDLab/Django-GlobalConfig --ref main
 ```
 
 To retry a specific revision, pass `-f source_sha=<full-commit-sha>`.
-The server builds the Dockerfile from the selected revision. Both documentation
+GitHub Actions builds the documentation image from the selected revision. Both documentation
 deployment and PyPI publishing require security and test checks for the exact
 revision. The separate **Security checks** workflow runs Gitleaks, Python and
 Django SAST and dependency checks, JavaScript and TypeScript SAST and npm
@@ -87,11 +87,14 @@ Compose file over SSH and installs both together under
 preparation for the same revision reuses the installed files. To prepare
 the server by itself, run **Prepare documentation server** from `main`.
 
-The deploy job sends a source archive for the selected commit from its GitHub
-checkout. The SSH account builds and updates the container with its Docker
-context or socket. When a rootless socket is available and no custom Docker
-context is selected, the script uses that socket. Both jobs run with the
-existing account's permissions.
+The documentation workflow uses the organization’s self-hosted Linux X64 runners.
+Share a runner from the organization’s `Default` group with this repository.
+The eligible runner must have Docker with Compose V2, Git, GitHub CLI, Go, jq, ShellCheck, an SSH client,
+`flock`, tar, and gzip. Preparation verifies the serving host architecture. The runner builds both
+locales into an image and streams the compressed Docker image over SSH.
+The SSH account loads the image, verifies its commit and workflow run, and starts the container with its existing
+Docker context or socket. When a rootless socket is available and no custom Docker context
+is selected, the script uses that socket. Both SSH jobs use the existing account's permissions.
 
 Point the HTTPS reverse proxy for `django-gc.rdd-lab.com` at
 `127.0.0.1:<DOCS_PORT>`. Angie and the container health check use the
@@ -103,7 +106,7 @@ image and host port and reports a failed run. To roll back a healthy
 deployment, dispatch the workflow with a previously deployed commit.
 The workflow uses the current `DOCS_PORT` for that deployment.
 
-The server builds from a source archive. The sitemap uses Git dates when built from a full checkout.
+The runner builds from a source archive. The sitemap uses Git dates when built from a full checkout.
 
 ### Container build
 

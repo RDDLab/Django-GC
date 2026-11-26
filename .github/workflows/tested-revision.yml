@@ -11,6 +11,10 @@ on:
         description: Require the selected commit to still be the head of main
         type: boolean
         default: false
+      use_docs_runner:
+        description: Run documentation deployment checks on the self-hosted Linux X64 runner
+        type: boolean
+        default: false
 
 permissions:
   actions: read
@@ -19,7 +23,9 @@ permissions:
 jobs:
   verify:
     name: Check completed tests on main
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ fromJSON(inputs.use_docs_runner && github.event_name == 'workflow_dispatch' &&
+        github.ref == 'refs/heads/main' && '["self-hosted","Linux","X64"]' || '["ubuntu-latest"]') }}
     timeout-minutes: 5
     steps:
       - name: Verify test results for the selected SHA

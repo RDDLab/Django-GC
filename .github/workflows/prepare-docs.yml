@@ -10,7 +10,9 @@ jobs:
   prepare:
     name: Install documentation deployment files as the SSH user
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on:
+      group: Default
+      labels: [self-hosted, Linux, X64]
     timeout-minutes: 5
     environment: docs-production
     steps:

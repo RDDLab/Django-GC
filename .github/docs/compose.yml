@@ -1,6 +1,6 @@
 services:
   docs:
-    image: ${DOCS_IMAGE:?Set DOCS_IMAGE to a locally built documentation image}
+    image: ${DOCS_IMAGE:?Set DOCS_IMAGE to a loaded documentation image}
     pull_policy: never
     restart: unless-stopped
     ports:

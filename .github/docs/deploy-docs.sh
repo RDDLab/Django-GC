@@ -2,13 +2,14 @@
 set -euo pipefail
 umask 077
 
-if (( $# != 2 )) || [[ ! "$1" =~ ^[0-9a-f]{40}$ || ! "$2" =~ ^[1-9][0-9]{0,4}$ ]] ||
-   (( $2 > 65535 )); then
-    echo 'Expected a full commit SHA and a host port from 1 to 65535.' >&2
+if (( $# != 3 )) || [[ ! "$1" =~ ^[0-9a-f]{40}$ || ! "$2" =~ ^[1-9][0-9]{0,4}$ ||
+      ! "$3" =~ ^[0-9]+-[0-9]+$ ]] || (( $2 > 65535 )); then
+    echo 'Expected a full commit SHA, a host port from 1 to 65535, and a workflow run and attempt.' >&2
     exit 1
 fi
 sha=$1
 export DOCS_PORT=$2
+image_build="$sha $3"
 
 state_dir="$HOME/.local/state/django-gc-docs"
 deploy_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -23,6 +24,7 @@ fi
 
 mkdir -p "$state_dir"
 exec 9>"$state_dir/deploy.lock"
+echo 'Waiting for the documentation deployment lock.'
 flock -w 300 9
 
 compose() {
@@ -38,7 +40,7 @@ cleanup() {
         echo 'Deployment failed. Restoring the previous documentation service.' >&2
         if [[ -n "$previous_image" ]]; then
             export DOCS_IMAGE=django-gc-docs:rollback DOCS_PORT="$previous_port"
-            if ! { docker image tag "$previous_image" "$DOCS_IMAGE" && compose up --detach --wait --wait-timeout 60; }; then
+            if ! { docker image tag "$previous_image" "$DOCS_IMAGE" && compose up --detach --no-build --wait --wait-timeout 60; }; then
                 echo 'Could not restore the previous documentation image.' >&2
             fi
         else
@@ -46,11 +48,9 @@ cleanup() {
         fi
     fi
 
-    rm -rf -- "$release_dir"
     exit "$status"
 }
 
-release_dir=$(mktemp -d "$state_dir/release.XXXXXXXX")
 restore_service=false
 previous_image=''
 previous_port=''
@@ -59,18 +59,6 @@ trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-tar -xf - -C "$release_dir"
-if [[ -f "$release_dir/.github/docs/Dockerfile" ]]; then
-    build_context="$release_dir"
-    dockerfile="$build_context/.github/docs/Dockerfile"
-else
-    build_context="$release_dir/docs"
-    dockerfile="$build_context/Dockerfile"
-fi
-if [[ ! -f "$dockerfile" ]]; then
-    echo 'The documentation archive does not contain a Dockerfile.' >&2
-    exit 1
-fi
 export DOCS_IMAGE=django-gc-docs:"$sha"
 previous_container=$(compose ps --all --quiet docs)
 if [[ -n "$previous_container" ]]; then
@@ -82,13 +70,20 @@ if [[ -n "$previous_container" ]]; then
     fi
 fi
 
-docker build --file "$dockerfile" --tag "$DOCS_IMAGE" "$build_context"
-new_image=$(docker image inspect --format '{{.Id}}' "$DOCS_IMAGE")
+echo 'Loading the documentation image built by GitHub Actions.'
+docker image load --quiet
+image_labels='{{index .Config.Labels "org.opencontainers.image.revision"}} {{index .Config.Labels "org.rddlab.docs.workflow-run"}}'
+if [[ "$(docker image inspect --format "$image_labels" "$DOCS_IMAGE")" != "$image_build" ]]; then
+    echo 'The loaded documentation image does not match the requested revision and workflow run.' >&2
+    exit 1
+fi
+
+echo 'Starting the documentation container and checking readiness.'
 restore_service=true
-compose up --detach --wait --wait-timeout 60
+compose up --detach --no-build --wait --wait-timeout 60
 running_container=$(compose ps --quiet docs)
 if [[ -z "$running_container" ]] ||
-   [[ "$(docker inspect --format '{{.Image}} {{.State.Health.Status}}' "$running_container")" != "$new_image healthy" ]]; then
+   [[ "$(docker inspect --format "$image_labels {{.State.Health.Status}}" "$running_container")" != "$image_build healthy" ]]; then
     echo 'The new documentation image did not become healthy.' >&2
     exit 1
 fi

@@ -7,8 +7,6 @@ import Heading from '@theme/Heading';
 
 import styles from './index.module.css';
 
-const PACKAGE_VERSION = '1.1.4';
-
 type Copy = {
   title: string;
   description: string;
@@ -183,7 +181,8 @@ function InstallCommand({
 }
 
 export default function Home(): ReactNode {
-  const {i18n} = useDocusaurusContext();
+  const {i18n, siteConfig} = useDocusaurusContext();
+  const packageVersion = siteConfig.customFields?.packageVersion;
   const copy = i18n.currentLocale === 'ru' ? ru : en;
   const logoSrc = useBaseUrl('/img/icon.svg');
 
@@ -195,7 +194,9 @@ export default function Home(): ReactNode {
             <div className={styles.heroCopy}>
               <p className={styles.kicker}>
                 {copy.kicker}
-                <span className={styles.version}>{`v${PACKAGE_VERSION}`}</span>
+                {typeof packageVersion === 'string' && (
+                  <span className={styles.version}>{`v${packageVersion}`}</span>
+                )}
               </p>
               <Heading as="h1" className={styles.heroTitle}>
                 {copy.heroTitle.map((part) =>

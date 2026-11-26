@@ -115,7 +115,8 @@ The runner builds from a source archive. The sitemap uses Git dates when built f
 The Dockerfile has three stages. `dependencies` uses Node.js 24.22.3 LTS,
 installs the npm version pinned in `docs/package.json`, and installs
 dependencies from the lockfile. `site-build` copies the documentation
-sources and builds both locales. `runtime` copies the generated files and
+sources and builds both locales. It reads the homepage version from the selected
+revision's `pyproject.toml`. `runtime` copies the generated files and
 Angie configuration into the official Angie 1.12.5 minimal image.
 
 Run the build from the repository root.

@@ -5,6 +5,7 @@ RUN --mount=type=cache,target=/root/.npm npm install --global "$(node -p 'requir
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 FROM dependencies AS site-build
+COPY pyproject.toml /pyproject.toml
 COPY docs/ ./
 RUN DOCS_WITHOUT_GIT=1 npm run docs:build
 RUN test -s build/index.html && test -s build/ru/index.html

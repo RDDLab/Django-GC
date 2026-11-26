@@ -132,7 +132,7 @@ jobs:
           build_context="$build_dir/docs"
           dockerfile="$build_context/Dockerfile"
           if git cat-file -e "$SOURCE_SHA:.github/docs/Dockerfile" 2>/dev/null; then
-            source_paths+=(.github/docs)
+            source_paths+=(.github/docs pyproject.toml)
             build_context="$build_dir"
             dockerfile="$build_context/.github/docs/Dockerfile"
           fi

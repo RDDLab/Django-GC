@@ -1,6 +1,16 @@
+import {readFileSync} from 'node:fs';
+
 import {themes as prismThemes} from 'prism-react-renderer';
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+
+const projectMetadata = readFileSync(new URL('../pyproject.toml', import.meta.url), 'utf8');
+const projectSection = projectMetadata.split(/^\[/m).find((section) => section.startsWith('project]'));
+const packageVersion = projectSection?.match(/^version[ \t]*=[ \t]*"([^"]+)"/m)?.[1];
+
+if (!packageVersion) {
+  throw new Error('Missing [project] version in pyproject.toml.');
+}
 
 const YANDEX_METRIKA_ID = 111872297;
 
@@ -40,6 +50,7 @@ function yandexMetrika() {
 
 const config: Config = {
   title: 'Django-GC',
+  customFields: {packageVersion},
   tagline: 'Typed Django runtime configuration',
   favicon: 'img/favicon.svg',
 

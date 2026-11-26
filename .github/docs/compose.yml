@@ -3,8 +3,6 @@ services:
     image: ${DOCS_IMAGE:?Set DOCS_IMAGE to a loaded documentation image}
     pull_policy: never
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:${DOCS_PORT:?Set DOCS_PORT to the documentation host port}:8080"
     read_only: true
     tmpfs:
       - /tmp

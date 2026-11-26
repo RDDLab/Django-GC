@@ -4,6 +4,10 @@ All notable changes to **Django-GC** are documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Serve deployed documentation on the internal port 8080 of the container on `docs_net`.
+
 ## [1.1.6] — 2026-11-26
 
 ### Fixed

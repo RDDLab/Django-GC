@@ -43,14 +43,13 @@ and add the branch `main`. Add these five **Environment secrets**.
 | `SSH_USER` | Account authorised to deploy the documentation |
 | `SSH_HOST_KEY` | Server's ED25519 public host key |
 
-Set these **Environment variables**.
+Set this **Environment variable**.
 
 | Variable | Value |
 |---|---|
-| `DOCS_PORT` | Free loopback port for this documentation site, for example `18080` |
 | `DOCS_IP` | Free static IPv4 address for this site on the existing Docker network `docs_net` |
 
-Assign each site its own `DOCS_IP` and `DOCS_PORT`.
+Assign each site its own `DOCS_IP`.
 Set `SSH_USER` to the existing deployment account, for example `deploy`. For `SSH_HOST_KEY`, use the first two
 fields of the server's `/etc/ssh/ssh_host_ed25519_key.pub`, for example
 `ssh-ed25519 AAAA…`. Obtain the key through the server console or its
@@ -98,16 +97,16 @@ The SSH account loads the image, verifies its commit and workflow run, and start
 Docker context or socket. When a rootless socket is available and no custom Docker context
 is selected, the script uses that socket. Both SSH jobs use the existing account's permissions.
 
-Point the HTTPS reverse proxy for `django-gc.rdd-lab.com` at
-`127.0.0.1:<DOCS_PORT>` for a host-based proxy or at `<DOCS_IP>:8080` for a
-proxy container on the existing `docs_net` network. The static address must be
-available in that network’s IPv4 subnet.
+Connect the HTTPS reverse proxy for `django-gc.rdd-lab.com` to the existing `docs_net` network
+and use `http://<DOCS_IP>:8080` as its upstream. Port `8080` is internal to the container.
+The static address must be available in that network’s IPv4 subnet.
 
 The deployment lock serializes updates. The container checks both `/`
 and `/ru/`. If the new deployment fails, the script restores the previous
-image, host port, and previous network attachment and reports a failed run. To roll back a healthy
-deployment, dispatch the workflow with a previously deployed commit.
-The workflow uses the current `DOCS_PORT` and `DOCS_IP` for that deployment.
+image at its previous address on `docs_net` and reports a failed run. If the previous container
+had no address on that network, the script uses the configured `DOCS_IP`.
+To roll back a healthy deployment, dispatch the workflow with a previously deployed commit.
+The workflow uses the current `DOCS_IP` for that deployment.
 
 The runner builds from a source archive. The sitemap uses Git dates when built from a full checkout.
 

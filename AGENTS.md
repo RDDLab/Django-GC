@@ -22,6 +22,11 @@ Documentation: https://django-gc.rdd-lab.com/
   sync. Examples must match the code. New or changed public options,
   settings, and extras also need `<Since />` / `<Changed />` badges.
 
+## Documentation deployment
+
+- Configure `DOCS_IP` on `docs_net` and connect the reverse proxy to the
+  container's internal port `8080` without publishing a host port.
+
 ## Documentation version badges
 
 Docs are bilingual. English is the default locale at `/` (`docs/content/`).

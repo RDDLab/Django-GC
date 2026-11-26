@@ -5,7 +5,7 @@ docs_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 sha=0123456789abcdef0123456789abcdef01234567
 workflow_run=100-1
 docs_ip=172.30.10.10
-expected='Expected a full commit SHA, host port, workflow run and attempt, and IPv4 address.'
+expected='Expected a full commit SHA, workflow run and attempt, and IPv4 address.'
 reject_deploy_arguments() {
     local output
     if output=$(bash "$docs_dir/deploy-docs.sh" "$@" 2>&1) || [[ "$output" != "$expected" ]]; then
@@ -13,13 +13,11 @@ reject_deploy_arguments() {
         exit 1
     fi
 }
-reject_deploy_arguments "$sha" 18080 "$workflow_run"
-reject_deploy_arguments bad-sha 18080 "$workflow_run" "$docs_ip"
-reject_deploy_arguments "$sha" 0 "$workflow_run" "$docs_ip"
-reject_deploy_arguments "$sha" 65536 "$workflow_run" "$docs_ip"
-reject_deploy_arguments "$sha" 18080 invalid-run "$docs_ip"
-reject_deploy_arguments "$sha" 18080 "$workflow_run" '172.300.10.10'
-reject_deploy_arguments "$sha" 18080 "$workflow_run" "$docs_ip" extra
+reject_deploy_arguments "$sha" "$workflow_run"
+reject_deploy_arguments bad-sha "$workflow_run" "$docs_ip"
+reject_deploy_arguments "$sha" invalid-run "$docs_ip"
+reject_deploy_arguments "$sha" "$workflow_run" '172.300.10.10'
+reject_deploy_arguments "$sha" "$workflow_run" "$docs_ip" extra
 
 if command -v flock >/dev/null; then
     test_home=$(mktemp -d)
@@ -62,12 +60,8 @@ case "$1 $2" in
         ;;
     'compose --project-name')
         shift 7
-        if [[ "$1" == --file ]]; then
-            [[ "$2" == */compose.network.yml && -n "$DOCS_IP" ]]
-            shift 2
-        else
-            [[ -z "$DOCS_IP" ]]
-        fi
+        [[ "$1" == --file && "$2" == */compose.network.yml && -n "$DOCS_IP" ]]
+        shift 2
         case "$*" in
             'ps --all --quiet docs')
                 if [[ "$TEST_HEALTH" != healthy ]]; then
@@ -76,7 +70,7 @@ case "$1 $2" in
                 ;;
             'up --detach --no-build --wait --wait-timeout 60')
                 if [[ "$DOCS_IMAGE" == *:rollback ]]; then
-                    [[ "$DOCS_PORT" == 28080 && "$DOCS_IP" == "$TEST_PREVIOUS_IP" ]]
+                    [[ "$DOCS_IP" == "${TEST_PREVIOUS_IP:-$TEST_DOCS_IP}" ]]
                     touch "$HOME/container-restored"
                 else
                     [[ "$DOCS_IP" == "$TEST_DOCS_IP" ]]
@@ -91,7 +85,7 @@ case "$1 $2" in
         case "$3 $4" in
             *NetworkSettings*' previous') printf '%s\n' "$TEST_PREVIOUS_IP" ;;
             '{{.Image}} previous') printf '%s\n' previous-image ;;
-            *' previous') printf '%s\n' 28080 ;;
+            *' previous') exit 1 ;;
             *) printf '%s %s %s\n' "$TEST_DOCS_SHA" "$TEST_LOADED_RUN" "$TEST_HEALTH" ;;
         esac
         ;;
@@ -106,7 +100,7 @@ SH
                 TEST_DOCS_SHA="$sha" TEST_LOADED_RUN="$1" TEST_HEALTH="$2" \
                 TEST_NETWORK_EXISTS="${TEST_NETWORK_EXISTS:-true}" TEST_DOCS_IP="$docs_ip" \
                 TEST_PREVIOUS_IP="${TEST_PREVIOUS_IP:-}" \
-                bash "$prepared/deploy-docs.sh" "$sha" 18080 "$workflow_run" "$docs_ip"
+                bash "$prepared/deploy-docs.sh" "$sha" "$workflow_run" "$docs_ip"
     }
 
     if TEST_NETWORK_EXISTS=false deploy_test_image "$workflow_run" healthy || [[ -e "$test_home/container-started" ]]; then
@@ -134,20 +128,16 @@ compose_config() {
     docker compose --env-file /dev/null --file "$docs_dir/compose.yml" "$@" config --format json
 }
 
-for port in 18080 28080; do
-    DOCS_PORT="$port" compose_config | jq -e --arg port "$port" '
-        .services.docs.ports | length == 1 and
-        .[0].host_ip == "127.0.0.1" and .[0].published == $port and .[0].target == 8080
-    ' >/dev/null
-done
+compose_config | jq -e '(.services.docs.ports // []) | length == 0' >/dev/null
 
-DOCS_PORT=18080 DOCS_IP="$docs_ip" compose_config --file "$docs_dir/compose.network.yml" |
+DOCS_IP="$docs_ip" compose_config --file "$docs_dir/compose.network.yml" |
     jq -e --arg ip "$docs_ip" '
+        ((.services.docs.ports // []) | length == 0) and
         .networks.docs_net.external == true and .networks.docs_net.name == "docs_net" and
         .services.docs.networks.docs_net.ipv4_address == $ip
     ' >/dev/null
 
-if DOCS_PORT='' compose_config >/dev/null 2>&1; then
-    echo 'Compose accepted a missing documentation host port.' >&2
+if DOCS_IP='' compose_config --file "$docs_dir/compose.network.yml" >/dev/null 2>&1; then
+    echo 'Compose accepted a missing documentation container IP.' >&2
     exit 1
 fi

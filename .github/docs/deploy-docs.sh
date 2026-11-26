@@ -3,18 +3,17 @@ set -euo pipefail
 umask 077
 
 ipv4_octet='(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])'
-if (( $# != 4 )) || [[ ! "$1" =~ ^[0-9a-f]{40}$ || ! "$2" =~ ^[1-9][0-9]{0,4}$ ||
-      ! "$3" =~ ^[0-9]+-[0-9]+$ || ! "$4" =~ ^($ipv4_octet\.){3}$ipv4_octet$ ]] || (( $2 > 65535 )); then
-    echo 'Expected a full commit SHA, host port, workflow run and attempt, and IPv4 address.' >&2
+if (( $# != 3 )) || [[ ! "$1" =~ ^[0-9a-f]{40}$ || ! "$2" =~ ^[0-9]+-[0-9]+$ ||
+      ! "$3" =~ ^($ipv4_octet\.){3}$ipv4_octet$ ]]; then
+    echo 'Expected a full commit SHA, workflow run and attempt, and IPv4 address.' >&2
     exit 1
 fi
 sha=$1
-export DOCS_PORT=$2 DOCS_IP=$4
-image_build="$sha $3"
+export DOCS_IP=$3
+image_build="$sha $2"
 
 state_dir="$HOME/.local/state/django-gc-docs"
 deploy_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-compose_file="$deploy_dir/compose.yml"
 
 # Use a rootless socket when SSH did not start a session and Docker has no custom context.
 docker_socket="/run/user/$(id -u)/docker.sock"
@@ -29,11 +28,8 @@ echo 'Waiting for the documentation deployment lock.'
 flock -w 300 9
 
 compose() {
-    local files=(--file "$compose_file")
-    if [[ -n "$DOCS_IP" ]]; then
-        files+=(--file "$deploy_dir/compose.network.yml")
-    fi
-    docker compose --project-name django-gc-docs --env-file /dev/null "${files[@]}" "$@"
+    docker compose --project-name django-gc-docs --env-file /dev/null \
+        --file "$deploy_dir/compose.yml" --file "$deploy_dir/compose.network.yml" "$@"
 }
 
 cleanup() {
@@ -44,7 +40,7 @@ cleanup() {
     if [[ "$restore_service" == true ]]; then
         echo 'Deployment failed. Restoring the previous documentation service.' >&2
         if [[ -n "$previous_image" ]]; then
-            export DOCS_IMAGE=django-gc-docs:rollback DOCS_PORT="$previous_port" DOCS_IP="$previous_ip"
+            export DOCS_IMAGE=django-gc-docs:rollback DOCS_IP="${previous_ip:-$DOCS_IP}"
             if ! { docker image tag "$previous_image" "$DOCS_IMAGE" && compose up --detach --no-build --wait --wait-timeout 60; }; then
                 echo 'Could not restore the previous documentation image.' >&2
             fi
@@ -58,7 +54,6 @@ cleanup() {
 
 restore_service=false
 previous_image=''
-previous_port=''
 previous_ip=''
 trap cleanup EXIT
 trap 'exit 129' HUP
@@ -71,15 +66,10 @@ if ! docker network inspect docs_net >/dev/null; then
     exit 1
 fi
 
-previous_container=$(DOCS_IP="" compose ps --all --quiet docs)
+previous_container=$(compose ps --all --quiet docs)
 if [[ -n "$previous_container" ]]; then
     previous_ip=$(docker inspect --format '{{with index .NetworkSettings.Networks "docs_net"}}{{if and .IPAMConfig .IPAMConfig.IPv4Address}}{{.IPAMConfig.IPv4Address}}{{else}}{{.IPAddress}}{{end}}{{end}}' "$previous_container")
     previous_image=$(docker inspect --format '{{.Image}}' "$previous_container")
-    previous_port=$(docker inspect --format '{{range index .HostConfig.PortBindings "8080/tcp"}}{{.HostPort}}{{end}}' "$previous_container")
-    if [[ ! "$previous_port" =~ ^[1-9][0-9]{0,4}$ ]] || (( previous_port > 65535 )); then
-        echo 'Could not determine the previous documentation host port for rollback.' >&2
-        exit 1
-    fi
 fi
 
 echo 'Loading the documentation image built by GitHub Actions.'

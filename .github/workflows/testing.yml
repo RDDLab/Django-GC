@@ -158,7 +158,6 @@ jobs:
       - name: Build and verify the documentation container
         env:
           DOCS_IMAGE: django-gc-docs:ci
-          DOCS_PORT: "18080"
         run: |
           docker build --file .github/docs/Dockerfile --tag "$DOCS_IMAGE" .
           compose() {
@@ -166,5 +165,5 @@ jobs:
           }
           trap 'compose down' EXIT
           compose up --detach --wait --wait-timeout 90
-          curl --fail --silent --show-error --output /dev/null "http://127.0.0.1:$DOCS_PORT/"
-          curl --fail --silent --show-error --output /dev/null "http://127.0.0.1:$DOCS_PORT/ru/"
+          compose exec -T docs wget -q -O /dev/null http://docs:8080/
+          compose exec -T docs wget -q -O /dev/null http://docs:8080/ru/

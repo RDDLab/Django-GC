@@ -156,15 +156,10 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST_KEY: ${{ secrets.SSH_HOST_KEY }}
-          DOCS_PORT: ${{ vars.DOCS_PORT }}
           DOCS_IP: ${{ vars.DOCS_IP }}
         run: |
           if [[ ! "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ || ! "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::Full source and workflow commit SHAs are required."
-            exit 1
-          fi
-          if [[ ! "$DOCS_PORT" =~ ^[1-9][0-9]{0,4}$ ]] || (( DOCS_PORT > 65535 )); then
-            echo "::error::Set DOCS_PORT to a free host port from 1 to 65535."
             exit 1
           fi
 
@@ -176,4 +171,4 @@ jobs:
 
           docker image save "$DOCS_IMAGE_NAME:$SOURCE_SHA" | gzip -1 |
             bash .github/docs/ssh.sh \
-              "bash \"\$HOME/.local/share/django-gc-docs/$GITHUB_SHA/deploy-docs.sh\" $SOURCE_SHA $DOCS_PORT $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT $DOCS_IP"
+              "bash \"\$HOME/.local/share/django-gc-docs/$GITHUB_SHA/deploy-docs.sh\" $SOURCE_SHA $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT $DOCS_IP"

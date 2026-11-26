@@ -5,7 +5,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge)](https://docs.astral.sh/ruff)
 [![pyrefly](https://img.shields.io/endpoint?url=https://pyrefly.org/badge.json&style=for-the-badge)](https://pyrefly.org)
 [![PyPI](https://img.shields.io/pypi/v/django-gc?style=for-the-badge)](https://pypi.org/project/django-gc/)
-[![PyPI pyversions](https://img.shields.io/pypi/pyversions/django-gc.svg?style=for-the-badge)](https://pypi.python.org/pypi/django-gc/)
+[![Python 3.12, 3.13, 3.14 and 3.15](https://img.shields.io/badge/Python-3.12%20%7C%203.13%20%7C%203.14%20%7C%203.15-blue.svg?style=for-the-badge)](#requirements)
 [![PyPI djversions](https://img.shields.io/pypi/djversions/django-gc.svg?style=for-the-badge)](https://pypi.org/project/django-gc/)
 [![PyPI status](https://img.shields.io/pypi/status/django-gc.svg?style=for-the-badge)](https://pypi.python.org/pypi/django-gc)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-gc?style=for-the-badge)](https://pypistats.org/packages/django-gc)

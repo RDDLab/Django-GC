@@ -25,7 +25,7 @@ jobs:
       - name: Verify documentation runner tools
         shell: bash
         run: |
-          for tool in git docker gh go jq shellcheck ssh flock tar gzip; do
+          for tool in git docker ssh flock tar gzip; do
             if ! command -v "$tool" >/dev/null; then
               echo "::error::The documentation runner requires $tool."
               exit 1

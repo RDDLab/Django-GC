@@ -89,9 +89,10 @@ the server by itself, run **Prepare documentation server** from `main`.
 
 The documentation workflow uses the organization’s self-hosted Linux X64 runners.
 Share a runner from the organization’s `Default` group with this repository.
-The eligible runner must have Docker with Compose V2, Git, GitHub CLI, Go, jq, ShellCheck, an SSH client,
-`flock`, tar, and gzip. Preparation verifies the serving host architecture. The runner builds both
-locales into an image and streams the compressed Docker image over SSH.
+The runner must have Docker with Compose V2, Git, an SSH client, `flock`, tar, and gzip.
+The workflow provisions Go and downloads ShellCheck and jq when needed. The test gate uses the GitHub API.
+Preparation verifies the serving host architecture. The runner builds both locales into an image and
+streams the compressed Docker image over SSH.
 The SSH account loads the image, verifies its commit and workflow run, and starts the container with its existing
 Docker context or socket. When a rootless socket is available and no custom Docker context
 is selected, the script uses that socket. Both SSH jobs use the existing account's permissions.

@@ -46,21 +46,24 @@ jobs:
             fi
           fi
 
-          runs=$(gh api --paginate --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/testing.yml/runs" \
+          runs=$(gh api --paginate --method GET "repos/$GITHUB_REPOSITORY/actions/runs" \
             -f branch=main -f head_sha="$SOURCE_SHA" -F per_page=100)
           run=$(jq -cs --arg sha "$SOURCE_SHA" '
             [.[] | .workflow_runs[] | select(
-              .head_branch == "main" and .head_sha == $sha and (.event == "push" or .event == "workflow_dispatch")
+              .head_branch == "main" and .head_sha == $sha and (
+                (.path == ".github/workflows/main-ci.yml" and .event == "push") or
+                (.path == ".github/workflows/testing.yml" and (.event == "push" or .event == "workflow_dispatch"))
+              )
             )] | sort_by(.created_at, .id) | last // empty
           ' <<< "$runs")
           if [[ -z "$run" ]]; then
-            echo "::error::No testing.yml run on main was found for $SOURCE_SHA."
+            echo "::error::No CI run with tests on main was found for $SOURCE_SHA."
             exit 1
           fi
 
           run_url=$(jq -r '.html_url' <<< "$run")
           if ! jq -e '.status == "completed" and .conclusion == "success"' <<< "$run" > /dev/null; then
-            echo "::error::The latest testing.yml run for $SOURCE_SHA has not succeeded. $run_url"
+            echo "::error::The latest CI run with tests for $SOURCE_SHA has not succeeded. $run_url"
             exit 1
           fi
 
@@ -68,11 +71,11 @@ jobs:
           jobs=$(gh api --paginate --method GET "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs" \
             -f filter=all -F per_page=100)
           if ! jq -es '
-            [.[] | .jobs[] | select(.name | startswith("Pytest (Python "))]
+            [.[] | .jobs[] | .name |= (split(" / ") | last) | select(.name | startswith("Pytest (Python "))]
             | group_by(.name) | map(max_by(.id))
             | length > 0 and all(.[]; .conclusion == "success")
           ' <<< "$jobs" > /dev/null; then
             echo "::error::No successful Pytest matrix for $SOURCE_SHA. $run_url"
             exit 1
           fi
-          echo "Verified testing.yml for $SOURCE_SHA: $run_url"
+          echo "Verified tests for $SOURCE_SHA: $run_url"

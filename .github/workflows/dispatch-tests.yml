@@ -3,14 +3,18 @@ name: Dispatch tests for protected branches
 on:
   workflow_run:
     workflows: [Security checks]
-    types: [requested]
+    types: [completed]
+    branches-ignore: [main]
 
 permissions: {}
 
 jobs:
   dispatch:
     name: Dispatch testing for the protected branch head
-    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository
+    if: >-
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     permissions:
       actions: write
       contents: read

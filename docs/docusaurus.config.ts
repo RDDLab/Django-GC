@@ -175,8 +175,8 @@ const config: Config = {
       title: 'Django-GC',
       logo: {
         alt: 'Django-GC',
-        src: 'img/icon.svg',
-        srcDark: 'img/icon.svg',
+        src: 'img/logo.svg',
+        srcDark: 'img/logo.svg',
       },
       hideOnScroll: false,
       items: [

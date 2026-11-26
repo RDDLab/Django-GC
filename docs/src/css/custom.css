@@ -44,12 +44,17 @@
 }
 
 .navbar__logo {
-  height: 32px;
+  height: 28px;
 }
 
 .navbar__logo img {
-  height: 32px;
-  width: 32px;
+  height: 28px;
+  width: auto;
+  max-width: 168px;
+}
+
+.navbar__title {
+  display: none;
 }
 
 .menu__link {
